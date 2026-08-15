@@ -15,9 +15,7 @@ public class RelationController {
     private RelationService relationService;
 
     @GetMapping("/{tableId}")
-    public Result<TableRelationVO> getRelations(
-            @PathVariable Long tableId,
-            @RequestParam(defaultValue = "all") String direction) {
-        return Result.ok(relationService.getRelations(tableId, direction));
+    public Result<TableRelationVO> getRelations(@PathVariable Long tableId) {
+        return Result.ok(relationService.getRelations(tableId));
     }
 }

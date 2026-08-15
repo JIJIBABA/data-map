@@ -27,6 +27,7 @@ public class ProjectService {
 
     public List<Project> list(String keyword) {
         LambdaQueryWrapper<Project> qw = new LambdaQueryWrapper<>();
+        qw.eq(Project::getStatus, 1);
         if (keyword != null && !keyword.isEmpty()) {
             qw.like(Project::getAppName, keyword);
         }
@@ -40,6 +41,7 @@ public class ProjectService {
 
     public Project getByAppName(String appName) {
         LambdaQueryWrapper<Project> qw = new LambdaQueryWrapper<>();
+        qw.eq(Project::getStatus, 1);
         qw.eq(Project::getAppName, appName);
         return projectMapper.selectOne(qw);
     }

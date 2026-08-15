@@ -18,35 +18,21 @@ public class RelationService {
     @Resource
     private TableInfoMapper tableInfoMapper;
 
-    public TableRelationVO getRelations(Long tableId, String direction) {
+    public TableRelationVO getRelations(Long tableId) {
         Set<Long> tableIds = new HashSet<>();
         tableIds.add(tableId);
 
-        LambdaQueryWrapper<TableRelation> qw = new LambdaQueryWrapper<>();
-        if ("upstream".equals(direction)) {
-            collectUpstream(tableId, tableIds, new HashSet<>());
-        } else if ("downstream".equals(direction)) {
-            collectDownstream(tableId, tableIds, new HashSet<>());
-        } else {
-            collectAll(tableId, tableIds, new HashSet<>());
-        }
+        collectAll(tableId, tableIds, new HashSet<>());
 
         List<TableInfo> tables = tableInfoMapper.selectBatchIds(tableIds);
         Map<Long, String> nameMap = tables.stream()
                 .collect(Collectors.toMap(TableInfo::getId, TableInfo::getTableName));
 
-        List<TableRelation> relations;
-        if ("upstream".equals(direction)) {
-            qw.in(TableRelation::getTargetTableId, tableIds);
-            qw.in(TableRelation::getSourceTableId, tableIds);
-        } else if ("downstream".equals(direction)) {
-            qw.in(TableRelation::getSourceTableId, tableIds);
-            qw.in(TableRelation::getTargetTableId, tableIds);
-        } else {
-            qw.and(w -> w.in(TableRelation::getSourceTableId, tableIds)
-                    .or().in(TableRelation::getTargetTableId, tableIds));
-        }
-        relations = tableRelationMapper.selectList(qw);
+        LambdaQueryWrapper<TableRelation> qw = new LambdaQueryWrapper<>();
+        qw.eq(TableRelation::getStatus, 1)
+                .and(w -> w.in(TableRelation::getSourceTableId, tableIds)
+                        .or().in(TableRelation::getTargetTableId, tableIds));
+        List<TableRelation> relations = tableRelationMapper.selectList(qw);
 
         TableRelationVO vo = new TableRelationVO();
         vo.setNodes(tableIds.stream()
@@ -76,32 +62,11 @@ public class RelationService {
         return vo;
     }
 
-    private void collectUpstream(Long id, Set<Long> result, Set<Long> visited) {
-        if (!visited.add(id)) return;
-        LambdaQueryWrapper<TableRelation> qw = new LambdaQueryWrapper<>();
-        qw.eq(TableRelation::getTargetTableId, id);
-        List<TableRelation> relations = tableRelationMapper.selectList(qw);
-        for (TableRelation r : relations) {
-            result.add(r.getSourceTableId());
-            collectUpstream(r.getSourceTableId(), result, visited);
-        }
-    }
-
-    private void collectDownstream(Long id, Set<Long> result, Set<Long> visited) {
-        if (!visited.add(id)) return;
-        LambdaQueryWrapper<TableRelation> qw = new LambdaQueryWrapper<>();
-        qw.eq(TableRelation::getSourceTableId, id);
-        List<TableRelation> relations = tableRelationMapper.selectList(qw);
-        for (TableRelation r : relations) {
-            result.add(r.getTargetTableId());
-            collectDownstream(r.getTargetTableId(), result, visited);
-        }
-    }
-
     private void collectAll(Long id, Set<Long> result, Set<Long> visited) {
         if (!visited.add(id)) return;
         LambdaQueryWrapper<TableRelation> qw = new LambdaQueryWrapper<>();
-        qw.eq(TableRelation::getSourceTableId, id).or().eq(TableRelation::getTargetTableId, id);
+        qw.eq(TableRelation::getStatus, 1)
+                .and(w -> w.eq(TableRelation::getSourceTableId, id).or().eq(TableRelation::getTargetTableId, id));
         List<TableRelation> relations = tableRelationMapper.selectList(qw);
         for (TableRelation r : relations) {
             Long next = r.getSourceTableId().equals(id) ? r.getTargetTableId() : r.getSourceTableId();

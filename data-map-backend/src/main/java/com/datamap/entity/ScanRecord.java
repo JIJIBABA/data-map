@@ -13,7 +13,8 @@ public class ScanRecord {
     private Long projectId;
     private String scanType;
     private String tableNames;
-    private String status;
+    private String scanStatus;
+    private Integer status;
     private String errorMsg;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
@@ -26,8 +27,10 @@ public class ScanRecord {
     public void setScanType(String scanType) { this.scanType = scanType; }
     public String getTableNames() { return tableNames; }
     public void setTableNames(String tableNames) { this.tableNames = tableNames; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public String getScanStatus() { return scanStatus; }
+    public void setScanStatus(String scanStatus) { this.scanStatus = scanStatus; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     public String getErrorMsg() { return errorMsg; }
     public void setErrorMsg(String errorMsg) { this.errorMsg = errorMsg; }
     public LocalDateTime getStartedAt() { return startedAt; }

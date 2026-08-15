@@ -17,6 +17,7 @@ public class TableInfo {
     private Integer tableCommentManual;
     private String schemaName;
     private String dbType;
+    private Integer status;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)
@@ -38,6 +39,8 @@ public class TableInfo {
     public void setDbType(String dbType) { this.dbType = dbType; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

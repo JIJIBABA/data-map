@@ -18,6 +18,7 @@ public class FieldUsageScenario {
     private String methodName;
     private String sourceTableName;
     private String sourceApiName;
+    private Integer status;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
@@ -37,6 +38,8 @@ public class FieldUsageScenario {
     public void setSourceTableName(String sourceTableName) { this.sourceTableName = sourceTableName; }
     public String getSourceApiName() { return sourceApiName; }
     public void setSourceApiName(String sourceApiName) { this.sourceApiName = sourceApiName; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

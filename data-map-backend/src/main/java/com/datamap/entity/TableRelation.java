@@ -18,6 +18,7 @@ public class TableRelation {
     private String targetFieldName;
     private String relationType;
     private String methodSignature;
+    private Integer status;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
@@ -37,6 +38,8 @@ public class TableRelation {
     public void setRelationType(String relationType) { this.relationType = relationType; }
     public String getMethodSignature() { return methodSignature; }
     public void setMethodSignature(String methodSignature) { this.methodSignature = methodSignature; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

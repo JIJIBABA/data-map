@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Java / Maven build output
+target/
+*.class
+
+# Frontend (Vite + pnpm)
+node_modules/
+dist/
+.vite/
+*.local
+
+# Logs
+*.log

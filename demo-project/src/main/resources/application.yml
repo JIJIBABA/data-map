@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: order-system
+  datasource:
+    url: jdbc:mysql://localhost:3306/order_db

@@ -18,6 +18,7 @@ public class FieldService {
 
     public List<TableField> listByTableId(Long tableId) {
         LambdaQueryWrapper<TableField> qw = new LambdaQueryWrapper<>();
+        qw.eq(TableField::getStatus, 1);
         qw.eq(TableField::getTableId, tableId);
         qw.orderByAsc(TableField::getIsPk);
         return tableFieldMapper.selectList(qw);
@@ -35,12 +36,14 @@ public class FieldService {
 
     public List<FieldUsageScenario> getUsageScenarios(Long fieldId) {
         LambdaQueryWrapper<FieldUsageScenario> qw = new LambdaQueryWrapper<>();
+        qw.eq(FieldUsageScenario::getStatus, 1);
         qw.eq(FieldUsageScenario::getFieldId, fieldId);
         return fieldUsageScenarioMapper.selectList(qw);
     }
 
     public TableField getByTableAndName(Long tableId, String fieldName) {
         LambdaQueryWrapper<TableField> qw = new LambdaQueryWrapper<>();
+        qw.eq(TableField::getStatus, 1);
         qw.eq(TableField::getTableId, tableId);
         qw.eq(TableField::getFieldName, fieldName);
         return tableFieldMapper.selectOne(qw);

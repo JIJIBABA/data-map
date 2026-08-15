@@ -24,8 +24,10 @@ public class QueryService {
 
     public List<FieldSearchResult> searchFields(String keyword, Long projectId) {
         LambdaQueryWrapper<TableField> fQw = new LambdaQueryWrapper<>();
+        fQw.eq(TableField::getStatus, 1);
         if (keyword != null && !keyword.isEmpty()) {
-            fQw.like(TableField::getFieldComment, keyword);
+            fQw.and(w -> w.like(TableField::getFieldName, keyword)
+                    .or().like(TableField::getFieldComment, keyword));
         }
         List<TableField> fields = tableFieldMapper.selectList(fQw);
         if (fields.isEmpty()) return Collections.emptyList();
@@ -65,13 +67,17 @@ public class QueryService {
         Map<Long, String> tableNames = new HashMap<>();
 
         List<TableInfo> allTables = tableInfoMapper.selectList(
-                new LambdaQueryWrapper<TableInfo>().eq(TableInfo::getProjectId, req.getProjectId()));
+                new LambdaQueryWrapper<TableInfo>()
+                        .eq(TableInfo::getStatus, 1)
+                        .eq(TableInfo::getProjectId, req.getProjectId()));
         for (TableInfo t : allTables) {
             tableNames.put(t.getId(), t.getTableName());
         }
 
         List<TableRelation> relations = tableRelationMapper.selectList(
-                new LambdaQueryWrapper<TableRelation>().eq(TableRelation::getProjectId, req.getProjectId()));
+                new LambdaQueryWrapper<TableRelation>()
+                        .eq(TableRelation::getStatus, 1)
+                        .eq(TableRelation::getProjectId, req.getProjectId()));
         // Build bidirectional adjacency: store original + reversed edges
         Map<Long, List<TableRelation>> adj = new HashMap<>();
         for (TableRelation r : relations) {

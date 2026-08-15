@@ -23,6 +23,7 @@ public class TableService {
 
     public List<TableInfo> list(Long projectId, String tableName) {
         LambdaQueryWrapper<TableInfo> qw = new LambdaQueryWrapper<>();
+        qw.eq(TableInfo::getStatus, 1);
         if (projectId != null) {
             qw.eq(TableInfo::getProjectId, projectId);
         }
@@ -39,6 +40,7 @@ public class TableService {
 
     public TableInfo getByProjectAndName(Long projectId, String tableName) {
         LambdaQueryWrapper<TableInfo> qw = new LambdaQueryWrapper<>();
+        qw.eq(TableInfo::getStatus, 1);
         qw.eq(TableInfo::getProjectId, projectId);
         qw.eq(TableInfo::getTableName, tableName);
         return tableInfoMapper.selectOne(qw);

@@ -17,6 +17,7 @@ public class TableField {
     private Integer isPk;
     private Integer isBusinessField;
     private Integer fieldCommentManual;
+    private Integer status;
     @com.baomidou.mybatisplus.annotation.TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @com.baomidou.mybatisplus.annotation.TableField(fill = FieldFill.INSERT_UPDATE)
@@ -40,6 +41,8 @@ public class TableField {
     public void setFieldCommentManual(Integer fieldCommentManual) { this.fieldCommentManual = fieldCommentManual; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

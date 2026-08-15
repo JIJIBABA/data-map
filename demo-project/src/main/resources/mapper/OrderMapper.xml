@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.dao.OrderMapper">
+
+    <resultMap id="orderWithUser" type="com.demo.entity.Order">
+        <id property="orderId" column="order_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="orderStatus" column="order_status"/>
+        <association property="user" javaType="com.demo.entity.User">
+            <id property="userId" column="user_id"/>
+            <result property="userName" column="user_name"/>
+        </association>
+        <collection property="items" ofType="com.demo.entity.OrderItem">
+            <id property="itemId" column="item_id"/>
+            <result property="productId" column="product_id"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectOrderWithUser" resultMap="orderWithUser">
+        SELECT o.*, u.user_name
+        FROM tb_order o
+        LEFT JOIN tb_user u ON o.user_id = u.user_id AND u.status = 1
+        WHERE o.order_id = #{orderId} AND o.status = 1
+    </select>
+
+    <select id="selectOrdersByUser" resultType="com.demo.entity.Order">
+        SELECT * FROM tb_order WHERE user_id = #{userId} AND status = 1
+    </select>
+
+    <select id="selectOrderItemsByOrder" resultType="com.demo.entity.OrderItem">
+        SELECT * FROM tb_order_item WHERE order_id = #{orderId} AND status = 1
+    </select>
+
+    <insert id="insertOrder" parameterType="com.demo.entity.Order">
+        INSERT INTO tb_order (order_id, user_id, order_status, total_amount, status)
+        VALUES (#{orderId}, #{userId}, #{orderStatus}, #{totalAmount}, 1)
+    </insert>
+
+    <update id="cancelOrder">
+        UPDATE tb_order SET order_status = 'CANCELLED'
+        WHERE order_id = #{orderId}
+    </update>
+
+    <delete id="deleteOrder">
+        DELETE FROM tb_order WHERE order_id = #{orderId}
+    </delete>
+
+    <insert id="insertOrderItem">
+        INSERT INTO tb_order_item (item_id, order_id, product_id, quantity, unit_price, status)
+        VALUES (#{itemId}, #{orderId}, #{productId}, #{quantity}, #{unitPrice}, 1)
+    </insert>
+
+</mapper>

@@ -44,7 +44,7 @@ public class ScanService {
         ScanRecord record = new ScanRecord();
         record.setProjectId(project.getId());
         record.setScanType(dto.getScanType());
-        record.setStatus("RUNNING");
+        record.setScanStatus("RUNNING");
         record.setStartedAt(LocalDateTime.now());
         scanRecordMapper.insert(record);
 
@@ -57,9 +57,9 @@ public class ScanService {
             for (ScanResultDTO.TableDTO td : dto.getTables()) {
                 processRelationsAndScenarios(project.getId(), td);
             }
-            record.setStatus("SUCCESS");
+            record.setScanStatus("SUCCESS");
         } catch (Exception e) {
-            record.setStatus("FAILED");
+            record.setScanStatus("FAILED");
             record.setErrorMsg(e.getMessage());
         }
         record.setCompletedAt(LocalDateTime.now());
