@@ -27,4 +27,26 @@ public class EntryPointResolverTest {
         assertEquals("/api/order/cancel", ep.info.path);
         assertEquals("POST", ep.info.httpMethod);
     }
+
+    @Test
+    public void matchesControllerWhenNonMatchingAnnotationComesFirst() throws Exception {
+        Path dir = Files.createTempDirectory("entrypoint-resolver");
+        Path src = dir.resolve("C.java");
+        String code =
+            "@interface Marker {}\n" +
+            "@interface RestController {}\n" +
+            "@interface RequestMapping { String value() default \"\"; }\n" +
+            "@interface PostMapping { String value() default \"\"; }\n" +
+            "@Marker @RestController @RequestMapping(\"/x\")\n" +
+            "class C { @PostMapping(\"/p\") void m() {} }\n";
+        Files.writeString(src, code);
+
+        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(List.of(src), ""));
+
+        assertEquals(1, entries.size());
+        EntryPoint ep = entries.iterator().next();
+        assertEquals("CONTROLLER", ep.info.type);
+        assertEquals("/x/p", ep.info.path);
+        assertEquals("POST", ep.info.httpMethod);
+    }
 }
