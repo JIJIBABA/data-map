@@ -27,6 +27,16 @@ public class Main {
         String out = opts.getOrDefault("o", "scan-result.json");
         JsonWriter.write(result, Paths.get(out));
         System.out.println("扫描完成: " + out + " (" + result.tables.size() + " 张表)");
+
+        if (opts.containsKey("submit")) {
+            int code = com.datamap.scanner.persist.ApiSubmitter.submit(result, opts.get("submit"));
+            System.out.println("POST " + opts.get("submit") + " -> " + code);
+        }
+        if (opts.containsKey("db")) {
+            String[] parts = opts.get("db").split(";");
+            com.datamap.scanner.persist.JdbcWriter.write(result, parts[0], parts[1], parts[2]);
+            System.out.println("JDBC 直连写入完成");
+        }
     }
 
     private static Map<String, String> parse(String[] args) {
