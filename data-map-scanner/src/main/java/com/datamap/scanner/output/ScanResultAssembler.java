@@ -46,8 +46,9 @@ public class ScanResultAssembler {
                     String[] desc = MethodDescriptionExtractor.extract(a.method, ctx);
                     List<List<ExecutableElement>> paths = ChainTraverser.traverse(a.method, graph, entryMethods, 10);
                     if (!DiffFilter.affected(a.method, paths, changedFiles, ctx)) continue;
-                    List<CallChainStep> chain = paths.isEmpty() ? List.of() : steps(paths.get(0));
                     EntryInfo entry = paths.isEmpty() ? null : entryOf(paths.get(0).get(0), entries);
+                    List<CallChainStep> chain = paths.isEmpty() ? List.of()
+                        : steps(paths.get(0), entry == null ? "OTHER" : entry.type);
                     scenarios.add(new UsageScenario(f.fieldName, op, qualified(a.method), desc[0], desc[1],
                         "", entry == null ? "" : entry.apiName, chain, entry));
                 }
@@ -69,11 +70,13 @@ public class ScanResultAssembler {
         return out;
     }
 
-    private static List<CallChainStep> steps(List<ExecutableElement> path) {
+    private static List<CallChainStep> steps(List<ExecutableElement> path, String entryLayer) {
         List<CallChainStep> out = new ArrayList<>();
-        for (ExecutableElement m : path) {
+        for (int i = 0; i < path.size(); i++) {
+            ExecutableElement m = path.get(i);
+            String layer = i == 0 ? entryLayer : "SERVICE";
             out.add(new CallChainStep(m.getEnclosingElement().toString(),
-                m.getSimpleName().toString(), m.toString(), "SERVICE"));
+                m.getSimpleName().toString(), m.toString(), layer));
         }
         return out;
     }

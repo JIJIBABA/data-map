@@ -3,3 +3,8 @@ ALTER TABLE field_usage_scenario
   ADD COLUMN entry_info TEXT NULL COMMENT '入口信息 JSON 对象' AFTER call_chain,
   ADD COLUMN method_description VARCHAR(512) NULL COMMENT '方法含义' AFTER entry_info,
   ADD COLUMN description_source VARCHAR(16) NULL COMMENT 'COMMENT/AI/NONE' AFTER method_description;
+
+-- 扩展 operation_type 取值：WRITE/UPDATE/READ/DELETE/UNRESOLVED
+ALTER TABLE field_usage_scenario MODIFY COLUMN operation_type VARCHAR(16);
+-- 扩展 scan_type 取值：FULL/TABLE/DIFF
+ALTER TABLE scan_record MODIFY COLUMN scan_type VARCHAR(16);

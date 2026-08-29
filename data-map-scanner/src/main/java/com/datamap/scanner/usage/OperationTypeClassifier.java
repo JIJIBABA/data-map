@@ -5,7 +5,9 @@ import com.datamap.scanner.javac.AnalysisContext;
 import com.sun.source.tree.*;
 import com.sun.source.util.TreeScanner;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 import java.util.*;
 
 public class OperationTypeClassifier {
@@ -37,22 +39,36 @@ public class OperationTypeClassifier {
         "insert","save","updateById","update","updateBatchById","deleteById","delete",
         "removeById","remove","selectById","selectOne","selectList","getById");
 
-    /** 扫描单个方法方法体的 mapper 方法名。 */
+    /** 扫描单个方法方法体的 mapper 方法名（仅当接收者为 Mapper/Dao 类型时计入）。 */
     private static Set<String> mapperCallsIn(ExecutableElement method, AnalysisContext ctx) {
         Set<String> names = new HashSet<>();
         Tree tree = ctx.trees.getTree(method);
         if (!(tree instanceof MethodTree)) return names;
         BlockTree body = ((MethodTree) tree).getBody();
         if (body == null) return names;
+        CompilationUnitTree cu = ctx.trees.getPath(method).getCompilationUnit();
         body.accept(new TreeScanner<Void, Void>() {
             @Override public Void visitMethodInvocation(MethodInvocationTree node, Void p) {
-                String name = node.getMethodSelect().toString();
-                int i = name.lastIndexOf('.');
-                String simple = i >= 0 ? name.substring(i + 1) : name;
-                if (MAPPER_METHODS.contains(simple)) names.add(simple);
+                ExpressionTree select = node.getMethodSelect();
+                if (select instanceof MemberSelectTree) {
+                    MemberSelectTree mst = (MemberSelectTree) select;
+                    String simple = mst.getIdentifier().toString();
+                    if (MAPPER_METHODS.contains(simple) && isMapperReceiver(mst.getExpression(), cu, ctx)) {
+                        names.add(simple);
+                    }
+                }
                 return super.visitMethodInvocation(node, p);
             }
         }, null);
         return names;
+    }
+
+    /** 接收者表达式解析为 Mapper/Dao 类型的字段或变量时才认定是 mapper 调用。 */
+    private static boolean isMapperReceiver(ExpressionTree receiver, CompilationUnitTree cu, AnalysisContext ctx) {
+        if (receiver == null) return false;
+        Element e = ctx.resolve(cu, receiver);
+        if (!(e instanceof VariableElement)) return false;
+        String type = ((VariableElement) e).asType().toString().toLowerCase();
+        return type.endsWith("mapper") || type.endsWith("dao");
     }
 }
