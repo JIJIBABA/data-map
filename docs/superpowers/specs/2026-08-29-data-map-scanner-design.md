@@ -18,7 +18,8 @@
 ### 2.1 在范围内
 
 - 表发现、字段定义提取、表关联关系提取、字段使用场景提取、调用链追踪
-- 输入方式：本地目录、git 仓库 + ref（branch/tag/commit）、差异扫描（diff 两个 ref）
+- 扫描模式：全量（FULL）、单表（TABLE）、差异（DIFF）
+- 输入方式：本地目录、git 仓库 + ref（branch/tag/commit）、差异扫描（diff 两个 ref）、指定单表（`--table`）
 - 落库方式：POST 后端 API + JDBC 直连 MySQL（两者都支持，默认 POST 后端）
 - ORM 覆盖：MyBatis/MyBatis-Plus（XML Mapper）+ JOOQ DSL（与现有 skill 一致）
 
@@ -51,7 +52,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 ## 4. 架构与流水线
 
 ```
-输入（--path | --repo+--ref | --diff base...head）
+输入（--path | --repo+--ref | --diff base...head | --table）
    │  git clone/checkout/diff 或直接读本地目录
    ▼
 ① 源文件收集      .java / *Mapper.xml / *.sql
@@ -86,6 +87,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 - `--path <dir>`：直接扫本地目录。
 - `--repo <url> --ref <branch/tag/commit>`：`git clone` 到临时目录并 checkout 指定 ref。
 - `--diff <base>...<head>`：`git diff --name-only base...head` 得变更文件集 `D`（`.java`、`.xml`、`.sql`）。
+- `--table <tableName>`：单表维度扫描（`scanType=TABLE`），只输出指定表的结果；找不到该表则报错退出。
 - 收集三类文件：`.java`（源码）、`*Mapper.xml`（MyBatis）、`*.sql`（DDL，仅用于补注释）。
 
 ### 5.2 javac 解析引擎
@@ -167,7 +169,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 ```json
 {
   "project": { "appName": "order-system", "gitRepoUrl": "...", "gitLocalPath": "/path" },
-  "scanType": "FULL | DIFF",
+  "scanType": "FULL | TABLE | DIFF",
   "tables": [
     {
       "tableName": "tb_order",
@@ -226,12 +228,13 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 
 ---
 
-## 10. 全量扫描 vs 差异扫描
+## 10. 扫描模式
 
 - **全量（FULL）**：checkout 指定 ref → 解析全部 → 输出全部。
+- **单表（TABLE）**：`--table <tableName>` → 只输出指定表的字段、关联关系（以该表为 source）、使用场景与调用链；其余表不输出/不入库。分析仍需解析全量源码（调用图是全局的）。
 - **差异（DIFF）**：`git diff --name-only base...head` 得变更文件集 `D`；在 `head` 上重建调用图（保证正确），但**只重算并输出**「直接字段访问方法定义在 D 中的文件里，或其链上任一方法定义在 D 中的文件里」的实体字段的 usageScenarios，其余不动 → 后端增量更新。
 
-> 差异扫描省的是重算与输出/入库；调用图仍需在 head 上重建（图变了）。这是保证 100% 正确的前提。
+> TABLE/DIFF 模式省的是重算与输出/入库；调用图仍需在 head 上重建（图变了）。这是保证 100% 正确的前提。
 
 ---
 
@@ -269,7 +272,7 @@ data-map-scanner/                    # 独立 Maven 项目，与 backend/fronten
 ## 13. 验收标准
 
 1. **100% 准确**：对样例项目（含重载/继承/接口实现/泛型/lambda/Lombok/Mapper 绑定）人工核验，字段访问与调用链 0 误差；反射/动态代理项被标记 `UNRESOLVED` 而非猜测。
-2. **三种输入可用**：`--path`、`--repo --ref`、`--diff base...head` 均能产出 JSON。
+2. **三种扫描模式可用**：FULL（`--path`/`--repo --ref`）、TABLE（`--table`）、DIFF（`--diff base...head`）均能产出正确 JSON。
 3. **两种落库可用**：`--submit` 写后端表、`--db` 直连写表，结果一致。
 4. **操作类型四类齐全**：WRITE/UPDATE/READ/DELETE 判定符合 §6 规则。
 5. **入口边界正确**：Controller/MQ/定时任务三类入口均被识别为停止点。
@@ -283,5 +286,5 @@ data-map-scanner/                    # 独立 Maven 项目，与 backend/fronten
 1. **Phase 1**：javac 解析引擎 + 实体/字段识别 + 关联关系提取（能输出 tables/fields/relations）。
 2. **Phase 2**：字段访问提取 + 调用图 + 接口绑定 + 入口识别 + 链路遍历（输出 usageScenarios + callChain + entry）。
 3. **Phase 3**：操作类型判定 + 方法含义提取 + Lombok 合成。
-4. **Phase 4**：输出 JSON + 落库（POST/JDBC）+ 差异扫描。
+4. **Phase 4**：输出 JSON + 落库（POST/JDBC）+ 扫描模式（FULL/TABLE/DIFF）。
 5. **Phase 5（可选）**：描述富化独立 LLM 步骤——对 `descriptionSource=NONE` 的项生成描述并标记 `AI`。
