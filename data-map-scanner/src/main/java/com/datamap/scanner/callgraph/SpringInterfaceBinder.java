@@ -6,6 +6,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import java.util.*;
 
@@ -19,6 +20,7 @@ public class SpringInterfaceBinder {
                 Element e = ctx.resolve(cu, decl);
                 if (!(e instanceof TypeElement)) continue;
                 TypeElement cls = (TypeElement) e;
+                if (cls.getKind().isInterface() || cls.getModifiers().contains(Modifier.ABSTRACT)) continue;
                 for (TypeElement iface : interfacesOf(ctx, cls)) {
                     impls.computeIfAbsent(iface, k -> new ArrayList<>()).add(cls);
                 }
