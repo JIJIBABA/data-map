@@ -116,6 +116,12 @@ public class ScanService {
         }
     }
 
+    private String serialize(Object o) {
+        if (o == null) return null;
+        try { return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(o); }
+        catch (Exception e) { return null; }
+    }
+
     private void processRelationsAndScenarios(Long projectId, ScanResultDTO.TableDTO td) {
         LambdaQueryWrapper<TableInfo> tqw = new LambdaQueryWrapper<>();
         tqw.eq(TableInfo::getProjectId, projectId);
@@ -168,6 +174,10 @@ public class ScanService {
                 scenario.setMethodName(us.getMethodName());
                 scenario.setSourceTableName(us.getSourceTableName());
                 scenario.setSourceApiName(us.getSourceApiName());
+                scenario.setMethodDescription(us.getMethodDescription());
+                scenario.setDescriptionSource(us.getDescriptionSource());
+                scenario.setCallChain(serialize(us.getCallChain()));
+                scenario.setEntryInfo(serialize(us.getEntry()));
                 fieldUsageScenarioMapper.insert(scenario);
             }
         }
