@@ -13,11 +13,13 @@ import java.util.List;
 
 public class AnalysisContext {
     public final List<CompilationUnitTree> units;
+    public final JavacTask task;
     public final Trees trees;
     public final Elements elements;
     public final Types types;
 
     public AnalysisContext(JavacTask task, Iterable<? extends CompilationUnitTree> units) {
+        this.task = task;
         this.trees = Trees.instance(task);
         this.elements = task.getElements();
         this.types = task.getTypes();
