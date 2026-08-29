@@ -27,7 +27,7 @@ public class OperationTypeClassifier {
             }
         }
         if (names.contains("insert") || names.contains("save")) return "WRITE";
-        if (names.contains("updateById") || names.contains("update")) return "UPDATE";
+        if (names.contains("updateById") || names.contains("update") || names.contains("updateBatchById")) return "UPDATE";
         if (names.contains("deleteById") || names.contains("delete")
                 || names.contains("removeById") || names.contains("remove")) return "DELETE";
         return "UNRESOLVED";
