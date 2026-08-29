@@ -9,7 +9,7 @@
 
 现有 `scan-project` skill（`~/.claude/skills/scan-project/SKILL.md`）用 grep + Claude 语义阅读提取元数据。其中调用链追踪（Step 5d「追踪写入来源」、`sourceApiName`/`sourceTableName`）靠 LLM 读代码推断，无法保证 100% 准确。
 
-**目标：** 用确定性静态分析（javac 编译器 API）替换 LLM 扫描，做到源码级引用 100% 准确，覆盖表发现、字段提取、关联关系、字段使用场景、调用链五块，**彻底移除 LLM 依赖**。
+**目标：** 用确定性静态分析（javac 编译器 API）替换 LLM 扫描，做到源码级引用 100% 准确，覆盖表发现、字段提取、关联关系、字段使用场景、调用链五块。**结构性元数据（字段/方法/链路/入口）彻底移除 LLM 依赖**；仅「方法含义」这类描述文字可选 LLM 兜底（见 §5.6）。
 
 ---
 
@@ -73,6 +73,8 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 ⑨ 操作类型判定   READ/WRITE/UPDATE/DELETE（结合 Mapper 绑定与 receiver 来源）
    ▼
 ⑩ 输出/落库      富化 JSON → 文件 | POST 后端 | JDBC 直连
+   │
+⑪ 描述富化(可选)  独立 LLM 步骤：仅对 descriptionSource=NONE 的项生成描述并标记 AI
 ```
 
 ---
@@ -119,7 +121,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
   - READ：getter 调用 / 字段读。
   - WRITE/UPDATE/DELETE：见 §6 操作类型判定。
 - Lombok：`@Data`/`@Getter`/`@Setter` 注解的实体，合成 getter/setter 方法符号，使字段访问不遗漏。
-- 方法含义 `methodDescription`：从直接方法的 javadoc/行注释提取（确定性）；无注释则留空，退化为方法名。
+- 方法含义 `methodDescription`：**注释优先**——从直接方法的 javadoc/行注释提取（确定性）；无注释时留空，由**独立的可选 LLM 富化步骤**兜底生成，并标记 `descriptionSource=AI`。LLM 富化是扫描器之外的独立步骤（保持扫描器纯确定性），只影响描述文字，不影响结构（字段/方法/链路/入口）。
 
 ### 5.7 调用图构建 + 接口绑定
 
@@ -180,6 +182,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
           "operationType": "UPDATE",
           "methodName": "com.xx.OrderService.cancelOrder",
           "methodDescription": "用户取消订单",
+          "descriptionSource": "COMMENT",
           "sourceTableName": "",
           "sourceApiName": "com.xx.OrderController.cancelOrder",
           "callChain": [
@@ -204,6 +207,8 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 - **`--submit`（默认）**：POST 到现有 `POST /api/scan/result`，后端 `ScanService` 统一写表（复用 upsert + 手工修改保护 + `scan_record`）。后端仅需扩展 DTO/实体字段，**无需新端点**。
 - **`--db <jdbc-url> <user> <pass>`**：JDBC 直连 MySQL 写表（不依赖后端进程）。扫描器内复制一份 ID 解析 + upsert 逻辑；此模式为后备，逻辑以 `ScanService` 为准。
 
+**描述富化（独立可选步骤）：** 扫描器只产出确定性结构 + 注释提取的描述（`descriptionSource=COMMENT/NONE`）。对 `NONE` 的项，由扫描器之外的轻量 LLM 步骤（Claude skill 或脚本）生成描述并标记 `descriptionSource=AI`。该步骤不触碰结构字段，结构准确性不受影响。
+
 ---
 
 ## 9. 后端数据模型变更
@@ -213,6 +218,7 @@ javac API 是 Error Prone、NullAway、Checker Framework、IDE「Find Usages」�
 - 加列 `call_chain`（TEXT，JSON 数组）
 - 加列 `entry_info`（TEXT，JSON 对象）
 - 加列 `method_description`（VARCHAR 512，或复用 `scenario_description`）
+- 加列 `description_source`（VARCHAR 16）：`COMMENT`（注释提取）/ `AI`（LLM 兜底生成）/ `NONE`（无）
 - `operation_type` 取值扩展到 `WRITE/UPDATE/READ/DELETE`（需同步 DB 列约束/注释）
 - `scan_record.scan_type` 增加 `DIFF` 取值（现有为 `FULL`/`TABLE`）
 
@@ -267,7 +273,8 @@ data-map-scanner/                    # 独立 Maven 项目，与 backend/fronten
 3. **两种落库可用**：`--submit` 写后端表、`--db` 直连写表，结果一致。
 4. **操作类型四类齐全**：WRITE/UPDATE/READ/DELETE 判定符合 §6 规则。
 5. **入口边界正确**：Controller/MQ/定时任务三类入口均被识别为停止点。
-6. **完整链路持久化**：`call_chain`/`entry_info`/`method_description` 落库并可被前端读取。
+6. **完整链路持久化**：`call_chain`/`entry_info`/`method_description`/`description_source` 落库并可被前端读取。
+7. **描述来源可区分**：`description_source` 正确标记 `COMMENT`（注释提取）/ `AI`（LLM 兜底）/ `NONE`（无）。
 
 ---
 
@@ -277,3 +284,4 @@ data-map-scanner/                    # 独立 Maven 项目，与 backend/fronten
 2. **Phase 2**：字段访问提取 + 调用图 + 接口绑定 + 入口识别 + 链路遍历（输出 usageScenarios + callChain + entry）。
 3. **Phase 3**：操作类型判定 + 方法含义提取 + Lombok 合成。
 4. **Phase 4**：输出 JSON + 落库（POST/JDBC）+ 差异扫描。
+5. **Phase 5（可选）**：描述富化独立 LLM 步骤——对 `descriptionSource=NONE` 的项生成描述并标记 `AI`。
