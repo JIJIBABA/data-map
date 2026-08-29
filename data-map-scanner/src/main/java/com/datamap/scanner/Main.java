@@ -1,5 +1,6 @@
 package com.datamap.scanner;
 
+import com.datamap.scanner.input.GitSource;
 import com.datamap.scanner.input.SourceCollector;
 import com.datamap.scanner.javac.AnalysisContext;
 import com.datamap.scanner.javac.JavaParser;
@@ -7,22 +8,40 @@ import com.datamap.scanner.model.ScanResult;
 import com.datamap.scanner.output.JsonWriter;
 import com.datamap.scanner.output.ScanResultAssembler;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws Exception {
         Map<String, String> opts = parse(args);
-        String path = opts.getOrDefault("path", ".");
         String table = opts.get("table");
-        String scanType = table != null ? "TABLE" : (opts.containsKey("diff") ? "DIFF" : "FULL");
-        Path root = Paths.get(path);
+        Path root;
+        Set<String> changedFiles = null;
+        String scanType;
+
+        if (opts.containsKey("repo")) {
+            Path tmp = Files.createTempDirectory("scanner-repo");
+            String diff = opts.get("diff");
+            if (diff != null) {
+                String[] parts = diff.split("\\.\\.\\.");
+                GitSource.checkout(opts.get("repo"), parts[1], tmp);
+                changedFiles = new HashSet<>(GitSource.diffFiles(tmp, parts[0], parts[1]));
+                scanType = "DIFF";
+            } else {
+                GitSource.checkout(opts.get("repo"), opts.getOrDefault("ref", "HEAD"), tmp);
+                scanType = "FULL";
+            }
+            root = tmp;
+        } else {
+            root = Paths.get(opts.getOrDefault("path", "."));
+            scanType = table != null ? "TABLE" : "FULL";
+        }
 
         AnalysisContext ctx = JavaParser.parse(SourceCollector.javaFiles(root), "");
         ScanResult result = ScanResultAssembler.assemble(ctx, SourceCollector.xmlFiles(root),
-            "demo", scanType, table);
+            "demo", scanType, table, changedFiles);
 
         String out = opts.getOrDefault("o", "scan-result.json");
         JsonWriter.write(result, Paths.get(out));
@@ -51,7 +70,6 @@ public class Main {
                     opts.put(key, "true");
                 }
             } else if (a.startsWith("-") && a.length() > 1) {
-                // 兼容单横线参数，如 -o /tmp/scan.json
                 String key = a.substring(1);
                 if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
                     opts.put(key, args[++i]);

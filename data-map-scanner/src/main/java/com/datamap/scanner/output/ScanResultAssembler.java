@@ -6,6 +6,7 @@ import com.datamap.scanner.entry.EntryPoint;
 import com.datamap.scanner.entry.EntryPointResolver;
 import com.datamap.scanner.entity.EntityResolver;
 import com.datamap.scanner.entity.FieldExtractor;
+import com.datamap.scanner.input.DiffFilter;
 import com.datamap.scanner.javac.AnalysisContext;
 import com.datamap.scanner.model.*;
 import com.datamap.scanner.relation.MybatisXmlRelationExtractor;
@@ -23,7 +24,8 @@ import java.util.stream.Collectors;
 
 public class ScanResultAssembler {
     public static ScanResult assemble(AnalysisContext ctx, List<Path> xmlFiles,
-                                      String appName, String scanType, String tableFilter) throws Exception {
+                                      String appName, String scanType, String tableFilter,
+                                      Set<String> changedFiles) throws Exception {
         Map<String, TypeElement> entities = EntityResolver.resolve(ctx);
         CallGraph graph = CallGraphBuilder.build(ctx);
         Set<EntryPoint> entries = EntryPointResolver.resolve(ctx);
@@ -43,6 +45,7 @@ public class ScanResultAssembler {
                     String op = OperationTypeClassifier.classify(a, graph, ctx);
                     String[] desc = MethodDescriptionExtractor.extract(a.method, ctx);
                     List<List<ExecutableElement>> paths = ChainTraverser.traverse(a.method, graph, entryMethods, 10);
+                    if (!DiffFilter.affected(a.method, paths, changedFiles, ctx)) continue;
                     List<CallChainStep> chain = paths.isEmpty() ? List.of() : steps(paths.get(0));
                     EntryInfo entry = paths.isEmpty() ? null : entryOf(paths.get(0).get(0), entries);
                     scenarios.add(new UsageScenario(f.fieldName, op, qualified(a.method), desc[0], desc[1],
