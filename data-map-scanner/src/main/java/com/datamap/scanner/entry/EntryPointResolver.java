@@ -37,6 +37,20 @@ public class EntryPointResolver {
                             out.add(new EntryPoint(m, new EntryInfo("MQ", className(m), null, null, null, null)));
                         } else if (methodAnns.contains("Scheduled")) {
                             out.add(new EntryPoint(m, new EntryInfo("SCHEDULED", className(m), null, null, null, null)));
+                        } else if (methodAnns.contains("XxlJob")) {
+                            out.add(new EntryPoint(m, new EntryInfo("SCHEDULED", className(m), null, pathValue(mt, "XxlJob"), null, null)));
+                        }
+                    }
+                    if (classAnns.contains("JobHandler")) {
+                        String handlerName = pathValue(node, "JobHandler");
+                        for (Tree member : node.getMembers()) {
+                            if (!(member instanceof MethodTree)) continue;
+                            MethodTree mt = (MethodTree) member;
+                            if (!mt.getName().contentEquals("execute")) continue;
+                            ExecutableElement m = methodElement(ctx, cu, mt);
+                            if (m != null) {
+                                out.add(new EntryPoint(m, new EntryInfo("SCHEDULED", className(m), null, handlerName, null, null)));
+                            }
                         }
                     }
                     return null;

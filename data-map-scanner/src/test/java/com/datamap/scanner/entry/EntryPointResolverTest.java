@@ -49,4 +49,28 @@ public class EntryPointResolverTest {
         assertEquals("/x/p", ep.info.path);
         assertEquals("POST", ep.info.httpMethod);
     }
+
+    @Test
+    public void detectsXxlJobEntries() throws Exception {
+        Path dir = Files.createTempDirectory("entrypoint-xxljob");
+        Path src = dir.resolve("X.java");
+        String code =
+            "@interface JobHandler { String value() default \"\"; }\n" +
+            "@interface XxlJob { String value() default \"\"; }\n" +
+            "@JobHandler(\"myHandler\")\n" +
+            "class MyJobHandler { public void execute(String param) {} }\n" +
+            "class MyTask { @XxlJob(\"myJob\") public void run() {} }\n";
+        Files.writeString(src, code);
+
+        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(List.of(src), ""));
+
+        assertEquals(2, entries.size());
+        EntryPoint handler = entries.stream().filter(e -> "myHandler".equals(e.info.path)).findFirst().orElse(null);
+        assertNotNull(handler);
+        assertEquals("SCHEDULED", handler.info.type);
+        assertEquals("execute", handler.method.getSimpleName().toString());
+        EntryPoint job = entries.stream().filter(e -> "myJob".equals(e.info.path)).findFirst().orElse(null);
+        assertNotNull(job);
+        assertEquals("SCHEDULED", job.info.type);
+    }
 }
