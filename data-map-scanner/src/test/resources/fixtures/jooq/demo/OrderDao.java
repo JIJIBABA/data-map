@@ -2,9 +2,12 @@ package demo;
 
 import com.example.jooq.tables.T_ORDER;
 import com.example.jooq.tables.T_USER;
+import com.example.jooq.tables.pojos.TOrder;
 
 public class OrderDao {
     private final DSL dsl = new DSL();
+
+    public void insert(TOrder pojo) { }
 
     public void update(T_ORDER table) {
         dsl.update(table).set(table.ORDER_STATUS, "X");

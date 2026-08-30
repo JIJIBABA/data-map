@@ -54,4 +54,28 @@ public class JooqFieldAccessCollectorTest {
         assertEquals("DELETE", d.operationType);
         assertEquals("delete", d.method.getSimpleName().toString());
     }
+
+    @Test
+    public void detectsPojoSetterWriteViaParamOriginTrace() throws Exception {
+        Map<String, List<JooqFieldAccess>> all = collect();
+
+        assertTrue(all.containsKey("T_ORDER.CHASSIS_NUM"), "should record POJO setChassisNum accesses");
+        List<JooqFieldAccess> accesses = all.get("T_ORDER.CHASSIS_NUM");
+
+        assertTrue(accesses.stream().anyMatch(a -> a.operationType.equals("WRITE")
+                && a.method.getSimpleName().toString().equals("fill")),
+                "setter in fill() should trace through param -> create() -> new -> WRITE");
+    }
+
+    @Test
+    public void detectsPojoGetterAsRead() throws Exception {
+        Map<String, List<JooqFieldAccess>> all = collect();
+
+        assertTrue(all.containsKey("T_ORDER.CHASSIS_NUM"), "should record POJO getChassisNum accesses");
+        List<JooqFieldAccess> accesses = all.get("T_ORDER.CHASSIS_NUM");
+
+        assertTrue(accesses.stream().anyMatch(a -> a.operationType.equals("READ")
+                && a.method.getSimpleName().toString().equals("read")),
+                "getter should map to READ");
+    }
 }

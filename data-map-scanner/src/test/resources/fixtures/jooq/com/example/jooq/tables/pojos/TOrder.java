@@ -1,7 +1,7 @@
-package com.example.jooq.tables;
+package com.example.jooq.tables.pojos;
 
-/** JOOQ 生成的 Record（表类 T_ORDER 的记录类型）。 */
-public class TOrderRecord {
+/** JOOQ 生成的 POJO（表类 T_ORDER 对应的记录值对象）。 */
+public class TOrder {
     private String chassisNum;
 
     public void setChassisNum(String chassisNum) {
