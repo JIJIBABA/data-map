@@ -41,8 +41,8 @@ public class EntryPointResolver {
                             out.add(new EntryPoint(m, new EntryInfo("SCHEDULED", className(m), null, pathValue(mt, "XxlJob"), null, null)));
                         }
                     }
-                    if (classAnns.contains("JobHandler")) {
-                        String handlerName = pathValue(node, "JobHandler");
+                    if (classAnns.contains("JobHandler") || extendsIJobHandler(node)) {
+                        String handlerName = classAnns.contains("JobHandler") ? pathValue(node, "JobHandler") : "";
                         for (Tree member : node.getMembers()) {
                             if (!(member instanceof MethodTree)) continue;
                             MethodTree mt = (MethodTree) member;
@@ -60,6 +60,11 @@ public class EntryPointResolver {
         return out;
     }
 
+    private static boolean extendsIJobHandler(ClassTree node) {
+        Tree ext = node.getExtendsClause();
+        if (ext == null) return false;
+        return "IJobHandler".equals(simple(ext.toString()));
+    }
     private static boolean isHttpMapping(String anno) {
         return anno.equals("RequestMapping") || anno.equals("GetMapping") || anno.equals("PostMapping")
             || anno.equals("PutMapping") || anno.equals("DeleteMapping");
