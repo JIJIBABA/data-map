@@ -8,6 +8,11 @@ import com.datamap.scanner.entity.EntityResolver;
 import com.datamap.scanner.entity.FieldExtractor;
 import com.datamap.scanner.input.DiffFilter;
 import com.datamap.scanner.javac.AnalysisContext;
+import com.datamap.scanner.jooq.JooqFieldAccess;
+import com.datamap.scanner.jooq.JooqFieldAccessCollector;
+import com.datamap.scanner.jooq.JooqFieldExtractor;
+import com.datamap.scanner.jooq.JooqRelationExtractor;
+import com.datamap.scanner.jooq.JooqTableResolver;
 import com.datamap.scanner.model.*;
 import com.datamap.scanner.relation.MybatisXmlRelationExtractor;
 import com.datamap.scanner.traverse.ChainTraverser;
@@ -33,7 +38,11 @@ public class ScanResultAssembler {
         Map<String, List<FieldAccess>> accesses = FieldAccessCollector.collect(ctx, entities);
         Map<String, List<ScanRelation>> xmlRelations = relationsBySourceTable(xmlFiles);
 
-        List<ScanTable> tables = new ArrayList<>();
+        Map<String, TypeElement> jooqTables = JooqTableResolver.resolve(ctx);
+        Map<String, List<JooqFieldAccess>> jooqAccesses = JooqFieldAccessCollector.collect(ctx, jooqTables);
+        Map<String, List<ScanRelation>> jooqRelations = JooqRelationExtractor.extract(ctx, jooqTables);
+
+        Map<String, ScanTable> tablesByName = new LinkedHashMap<>();
         for (Map.Entry<String, TypeElement> en : entities.entrySet()) {
             String tableName = en.getKey();
             if (tableFilter != null && !tableName.equals(tableFilter)) continue;
@@ -53,10 +62,51 @@ public class ScanResultAssembler {
                         "", entry == null ? "" : entry.apiName, chain, entry));
                 }
             }
-            tables.add(new ScanTable(tableName, "", "", "MYSQL", fields, relations, scenarios));
+            tablesByName.put(tableName, new ScanTable(tableName, "", "", "MYSQL", fields, relations, scenarios));
         }
+
+        for (Map.Entry<String, TypeElement> en : jooqTables.entrySet()) {
+            String tableName = en.getKey();
+            if (tableFilter != null && !tableName.equals(tableFilter)) continue;
+            List<ScanField> fields = JooqFieldExtractor.extract(en.getValue(), ctx);
+            List<ScanRelation> relations = jooqRelations.getOrDefault(tableName, List.of());
+            List<UsageScenario> scenarios = jooqScenarios(tableName, fields, jooqAccesses, graph, entries,
+                entryMethods, changedFiles, ctx);
+            tablesByName.put(tableName, new ScanTable(tableName, "", "", "MYSQL", fields, relations, scenarios));
+        }
+
         ScanProject project = new ScanProject(appName, "", "");
-        return new ScanResult(project, scanType, tables);
+        return new ScanResult(project, scanType, new ArrayList<>(tablesByName.values()));
+    }
+
+    /** 组装 JOOQ 字段级场景（含表级 DELETE），镜像 MyBatis 场景的调用链/入口映射。 */
+    private static List<UsageScenario> jooqScenarios(String tableName, List<ScanField> fields,
+            Map<String, List<JooqFieldAccess>> accesses, CallGraph graph, Set<EntryPoint> entries,
+            Set<ExecutableElement> entryMethods, Set<String> changedFiles, AnalysisContext ctx) {
+        List<UsageScenario> scenarios = new ArrayList<>();
+        for (ScanField f : fields) {
+            for (JooqFieldAccess a : accesses.getOrDefault(tableName + "." + f.fieldName, List.of())) {
+                addJooqScenario(scenarios, a, graph, entries, entryMethods, changedFiles, ctx);
+            }
+        }
+        // 表级 DELETE（fieldName=""，operationType=DELETE）
+        for (JooqFieldAccess a : accesses.getOrDefault(tableName + ".", List.of())) {
+            addJooqScenario(scenarios, a, graph, entries, entryMethods, changedFiles, ctx);
+        }
+        return scenarios;
+    }
+
+    private static void addJooqScenario(List<UsageScenario> scenarios, JooqFieldAccess a, CallGraph graph,
+            Set<EntryPoint> entries, Set<ExecutableElement> entryMethods, Set<String> changedFiles,
+            AnalysisContext ctx) {
+        String[] desc = MethodDescriptionExtractor.extract(a.method, ctx);
+        List<List<ExecutableElement>> paths = ChainTraverser.traverse(a.method, graph, entryMethods, 10);
+        if (!DiffFilter.affected(a.method, paths, changedFiles, ctx)) return;
+        EntryInfo entry = paths.isEmpty() ? null : entryOf(paths.get(0).get(0), entries);
+        List<CallChainStep> chain = paths.isEmpty() ? List.of()
+            : steps(paths.get(0), entry == null ? "OTHER" : entry.type);
+        scenarios.add(new UsageScenario(a.fieldName, a.operationType, qualified(a.method), desc[0], desc[1],
+            "", entry == null ? "" : entry.apiName, chain, entry));
     }
 
     /** 关联关系按 FROM 左表（源表）归属，避免把每张表的关联都重复挂到所有表上。 */
