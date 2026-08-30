@@ -1,6 +1,7 @@
 package demo;
 
 import com.example.jooq.tables.T_ORDER;
+import com.example.jooq.tables.T_USER;
 
 public class OrderDao {
     private final DSL dsl = new DSL();
@@ -19,5 +20,9 @@ public class OrderDao {
 
     public void delete(T_ORDER table) {
         dsl.deleteFrom(table);
+    }
+
+    public void joinQuery(T_ORDER order, T_USER user) {
+        dsl.select().from(order).leftJoin(user).on(order.USER_ID.eq(user.USER_ID));
     }
 }

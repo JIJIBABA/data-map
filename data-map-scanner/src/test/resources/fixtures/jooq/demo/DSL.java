@@ -10,12 +10,29 @@ public class DSL {
     public InsertValuesStep insertInto(Table<?> table, TableField<?, ?>... fields) { return null; }
     public void deleteFrom(Table<?> table) { }
 
+    public SelectSelectStep select() { return null; }
+
     public static class UpdateSetStep {
         public void set(TableField<?, ?> field, Object value) { }
     }
 
     public static class SelectWhereStep {
         public void where(Object condition) { }
+    }
+
+    public static class SelectSelectStep {
+        public SelectJoinStep from(Table<?> table) { return null; }
+    }
+
+    public static class SelectJoinStep {
+        public SelectOnStep join(Table<?> table) { return null; }
+        public SelectOnStep leftJoin(Table<?> table) { return null; }
+        public SelectOnStep innerJoin(Table<?> table) { return null; }
+        public void where(Object condition) { }
+    }
+
+    public static class SelectOnStep {
+        public SelectJoinStep on(Object condition) { return null; }
     }
 
     public static class InsertValuesStep {
