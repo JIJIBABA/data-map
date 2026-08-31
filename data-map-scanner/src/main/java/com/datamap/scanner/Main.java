@@ -17,6 +17,15 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Map<String, String> opts = parse(args);
         String table = opts.get("table");
+        Set<String> tableFilter = null;
+        if (table != null && !table.isEmpty()) {
+            tableFilter = new HashSet<>();
+            for (String t : table.split(",")) {
+                String trimmed = t.trim();
+                if (!trimmed.isEmpty()) tableFilter.add(trimmed);
+            }
+            if (tableFilter.isEmpty()) tableFilter = null;
+        }
         Path root;
         Set<String> changedFiles = null;
         String scanType;
@@ -36,13 +45,14 @@ public class Main {
             root = tmp;
         } else {
             root = Paths.get(opts.getOrDefault("path", "."));
-            scanType = table != null ? "TABLE" : "FULL";
+            scanType = tableFilter != null ? "TABLE" : "FULL";
         }
 
-        AnalysisContext ctx = JavaParser.parse(SourceCollector.javaFiles(root), "");
+        String classpath = opts.getOrDefault("cp", "");
+        AnalysisContext ctx = JavaParser.parse(SourceCollector.javaFiles(root), classpath);
         String appName = opts.getOrDefault("appName", "demo");
         ScanResult result = ScanResultAssembler.assemble(ctx, SourceCollector.xmlFiles(root),
-            appName, scanType, table, changedFiles);
+            appName, scanType, tableFilter, changedFiles);
 
         String out = opts.getOrDefault("o", "scan-result.json");
         JsonWriter.write(result, Paths.get(out));
@@ -53,8 +63,8 @@ public class Main {
             System.out.println("POST " + opts.get("submit") + " -> " + code);
         }
         if (opts.containsKey("db")) {
-            String[] parts = opts.get("db").split(";");
-            com.datamap.scanner.persist.JdbcWriter.write(result, parts[0], parts[1], parts[2]);
+            String[] parts = opts.get("db").split(";", 3);
+            com.datamap.scanner.persist.JdbcWriter.write(result, parts[0], parts[1], parts[2], appName);
             System.out.println("JDBC 直连写入完成");
         }
     }

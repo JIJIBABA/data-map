@@ -3,9 +3,13 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/data_map?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: 12345678
+#    url: jdbc:mysql://localhost:3306/data_map?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+#    username: root
+#    password: 12345678
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://12.0.221.123:3311/ccbscf_edt_d1?characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8&allowMultiQueries=true&allowPublicKeyRetrieval=true&autoReconnect=true
+    username: ccbscf_edt_dev
+    password: EDTd1Pass!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis-plus:

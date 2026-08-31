@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 public class ScanResultAssembler {
     public static ScanResult assemble(AnalysisContext ctx, List<Path> xmlFiles,
-                                      String appName, String scanType, String tableFilter,
+                                      String appName, String scanType, Set<String> tableFilter,
                                       Set<String> changedFiles) throws Exception {
         Map<String, TypeElement> entities = EntityResolver.resolve(ctx);
         CallGraph graph = CallGraphBuilder.build(ctx);
@@ -51,7 +51,7 @@ public class ScanResultAssembler {
         Map<String, ScanTable> tablesByName = new LinkedHashMap<>();
         for (Map.Entry<String, TypeElement> en : entities.entrySet()) {
             String tableName = en.getKey();
-            if (tableFilter != null && !tableName.equals(tableFilter)) continue;
+            if (tableFilter != null && !tableFilter.isEmpty() && !tableFilter.contains(tableName)) continue;
             List<ScanField> fields = FieldExtractor.extract(en.getValue(), ctx);
             List<ScanRelation> relations = mergeRelations(xmlRelations, assignmentRelations, tableName);
             List<UsageScenario> scenarios = new ArrayList<>();
@@ -74,7 +74,7 @@ public class ScanResultAssembler {
 
         for (Map.Entry<String, TypeElement> en : jooqTables.entrySet()) {
             String tableName = en.getKey();
-            if (tableFilter != null && !tableName.equals(tableFilter)) continue;
+            if (tableFilter != null && !tableFilter.isEmpty() && !tableFilter.contains(tableName)) continue;
             List<ScanField> fields = JooqFieldExtractor.extract(en.getValue(), ctx);
             List<ScanRelation> relations = mergeRelations(jooqRelations, assignmentRelations, tableName);
             List<UsageScenario> scenarios = jooqScenarios(tableName, fields, jooqAccesses, graph, entries,

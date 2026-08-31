@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/main/java/com/datamap/scanner/output/ScanResultAssembler.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": "67cacbfb9ba0c5ad57b54a559c23d16e66e2e895",
+  "category": "SOURCE_CODE",
+  "provider": "claude-code",
+  "tool_name": "Edit",
+  "created_at": "2026-08-31T12:33:48.851",
+  "updated_at": "2026-08-31T12:33:56.095",
+  "ai_hashes": [
+    "5ff59df80f3208a4",
+    "b0ab69a98bd807c2"
+  ]
+}
