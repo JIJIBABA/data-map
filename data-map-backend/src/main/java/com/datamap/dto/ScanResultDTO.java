@@ -87,6 +87,47 @@ public class ScanResultDTO {
         private String methodName;
         private String sourceTableName;
         private String sourceApiName;
+        private String methodDescription;
+        private String descriptionSource;
+        private List<CallChainStepDTO> callChain;
+        private EntryInfoDTO entry;
+
+        public static class CallChainStepDTO {
+            private String className;
+            private String methodName;
+            private String signature;
+            private String layer;
+            public String getClassName() { return className; }
+            public void setClassName(String v) { this.className = v; }
+            public String getMethodName() { return methodName; }
+            public void setMethodName(String v) { this.methodName = v; }
+            public String getSignature() { return signature; }
+            public void setSignature(String v) { this.signature = v; }
+            public String getLayer() { return layer; }
+            public void setLayer(String v) { this.layer = v; }
+        }
+
+        public static class EntryInfoDTO {
+            private String type;
+            private String apiName;
+            private String httpMethod;
+            private String path;
+            private String queue;
+            private String cron;
+            public String getType() { return type; }
+            public void setType(String v) { this.type = v; }
+            public String getApiName() { return apiName; }
+            public void setApiName(String v) { this.apiName = v; }
+            public String getHttpMethod() { return httpMethod; }
+            public void setHttpMethod(String v) { this.httpMethod = v; }
+            public String getPath() { return path; }
+            public void setPath(String v) { this.path = v; }
+            public String getQueue() { return queue; }
+            public void setQueue(String v) { this.queue = v; }
+            public String getCron() { return cron; }
+            public void setCron(String v) { this.cron = v; }
+        }
+
         public String getFieldName() { return fieldName; }
         public void setFieldName(String fieldName) { this.fieldName = fieldName; }
         public String getOperationType() { return operationType; }
@@ -99,6 +140,14 @@ public class ScanResultDTO {
         public void setSourceTableName(String sourceTableName) { this.sourceTableName = sourceTableName; }
         public String getSourceApiName() { return sourceApiName; }
         public void setSourceApiName(String sourceApiName) { this.sourceApiName = sourceApiName; }
+        public String getMethodDescription() { return methodDescription; }
+        public void setMethodDescription(String v) { this.methodDescription = v; }
+        public String getDescriptionSource() { return descriptionSource; }
+        public void setDescriptionSource(String v) { this.descriptionSource = v; }
+        public List<CallChainStepDTO> getCallChain() { return callChain; }
+        public void setCallChain(List<CallChainStepDTO> v) { this.callChain = v; }
+        public EntryInfoDTO getEntry() { return entry; }
+        public void setEntry(EntryInfoDTO v) { this.entry = v; }
     }
 
     public ProjectDTO getProject() { return project; }

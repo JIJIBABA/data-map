@@ -18,6 +18,10 @@ public class FieldUsageScenario {
     private String methodName;
     private String sourceTableName;
     private String sourceApiName;
+    private String callChain;
+    private String entryInfo;
+    private String methodDescription;
+    private String descriptionSource;
     private Integer status;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
@@ -38,6 +42,14 @@ public class FieldUsageScenario {
     public void setSourceTableName(String sourceTableName) { this.sourceTableName = sourceTableName; }
     public String getSourceApiName() { return sourceApiName; }
     public void setSourceApiName(String sourceApiName) { this.sourceApiName = sourceApiName; }
+    public String getCallChain() { return callChain; }
+    public void setCallChain(String callChain) { this.callChain = callChain; }
+    public String getEntryInfo() { return entryInfo; }
+    public void setEntryInfo(String entryInfo) { this.entryInfo = entryInfo; }
+    public String getMethodDescription() { return methodDescription; }
+    public void setMethodDescription(String methodDescription) { this.methodDescription = methodDescription; }
+    public String getDescriptionSource() { return descriptionSource; }
+    public void setDescriptionSource(String descriptionSource) { this.descriptionSource = descriptionSource; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
