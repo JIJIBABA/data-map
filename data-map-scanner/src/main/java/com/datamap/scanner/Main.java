@@ -1,4 +1,4 @@
-package com.datamap.scanner;
+ package com.datamap.scanner;
 
 import com.datamap.scanner.input.GitSource;
 import com.datamap.scanner.input.SourceCollector;
@@ -40,8 +40,9 @@ public class Main {
         }
 
         AnalysisContext ctx = JavaParser.parse(SourceCollector.javaFiles(root), "");
+        String appName = opts.getOrDefault("appName", "demo");
         ScanResult result = ScanResultAssembler.assemble(ctx, SourceCollector.xmlFiles(root),
-            "demo", scanType, table, changedFiles);
+            appName, scanType, table, changedFiles);
 
         String out = opts.getOrDefault("o", "scan-result.json");
         JsonWriter.write(result, Paths.get(out));

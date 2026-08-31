@@ -11,7 +11,10 @@ public class MethodDescriptionExtractor {
         DocTrees docTrees = DocTrees.instance(ctx.task);
         DocCommentTree doc = docTrees.getDocCommentTree(method);
         if (doc != null && !doc.getFullBody().isEmpty()) {
-            return new String[]{ doc.getFullBody().toString().trim(), "COMMENT" };
+            String text = doc.getFullBody().toString().trim();
+            // method_description 列 VARCHAR(512)，超长截断避免入库失败
+            if (text.length() > 500) text = text.substring(0, 500);
+            return new String[]{ text, "COMMENT" };
         }
         return new String[]{ "", "NONE" };
     }

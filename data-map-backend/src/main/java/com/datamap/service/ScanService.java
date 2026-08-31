@@ -165,9 +165,10 @@ public class ScanService {
                 fqw.eq(TableField::getTableId, table.getId());
                 fqw.eq(TableField::getFieldName, us.getFieldName());
                 TableField field = tableFieldMapper.selectOne(fqw);
+                if (field == null) continue; // 字段不存在（如表级 DELETE 的 fieldName=""）则跳过，field_id 非空约束
 
                 FieldUsageScenario scenario = new FieldUsageScenario();
-                scenario.setFieldId(field != null ? field.getId() : null);
+                scenario.setFieldId(field.getId());
                 scenario.setTableId(table.getId());
                 scenario.setOperationType(us.getOperationType());
                 scenario.setScenarioDescription(us.getScenarioDescription());
