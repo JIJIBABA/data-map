@@ -27,7 +27,7 @@ public class FieldExtractorTest {
     @Test
     public void extractsOrderFieldsWithPkAndBusinessFlag() throws Exception {
         AnalysisContext ctx = ctx();
-        TypeElement order = EntityResolver.resolve(ctx).get("tb_order");
+        TypeElement order = EntityResolver.resolve(ctx).get("tb_order").get(0);
         List<ScanField> fields = FieldExtractor.extract(order, ctx);
         assertEquals(4, fields.size());
         ScanField id = fields.stream().filter(f -> f.fieldName.equals("order_id")).findFirst().get();

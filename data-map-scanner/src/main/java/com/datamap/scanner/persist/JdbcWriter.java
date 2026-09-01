@@ -23,20 +23,28 @@ import java.util.Map;
 public class JdbcWriter {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    public static void write(ScanResult result, String jdbcUrl, String user, String pass, String appName) throws Exception {
+    /**
+     * JDBC 直连完整落库，镜像后端 ScanService 的两阶段 upsert 逻辑：
+     * Phase1: project / table_info / table_field（先建表与字段，关联依赖目标表已存在）
+     * Phase2: table_relation / field_usage_scenario（按表先删后插）
+     *
+     * @param status 写入行的 status 值；默认 1（与后端 MetaObjectHandlerConfig 插入自动填充值一致）。
+     *              传 0 等其它值可由调用方按需指定。
+     */
+    public static void write(ScanResult result, String jdbcUrl, String user, String pass, String appName, int status) throws Exception {
         try (Connection conn = DriverManager.getConnection(jdbcUrl, user, pass)) {
             conn.setAutoCommit(false);
             try {
                 // Phase 0: upsert project（按 app_name）
-                Long projectId = upsertProject(conn, appName, result.project);
+                Long projectId = upsertProject(conn, appName, result.project, status);
 
                 // Phase 1: upsert 所有表与字段（关联的目标表需先存在）
                 Map<String, Long> tableIdByName = new HashMap<>();
                 for (ScanTable table : result.tables) {
-                    Long tableId = upsertTable(conn, projectId, table);
+                    Long tableId = upsertTable(conn, projectId, table, status);
                     tableIdByName.put(table.tableName, tableId);
                     for (ScanField f : table.fields) {
-                        upsertField(conn, tableId, f);
+                        upsertField(conn, tableId, f, status);
                     }
                 }
 
@@ -53,7 +61,7 @@ public class JdbcWriter {
                             if (targetTableId == null) {
                                 targetTableId = findTableId(conn, projectId, r.targetTableName);
                             }
-                            insertRelation(conn, projectId, sourceTableId, r, targetTableId);
+                            insertRelation(conn, projectId, sourceTableId, r, targetTableId, status);
                         }
                     }
 
@@ -67,7 +75,7 @@ public class JdbcWriter {
                                     + " field=" + s.fieldName + " (field_id 未解析，跳过避免孤儿行)");
                                 continue;
                             }
-                            insertScenario(conn, fieldId, sourceTableId, s);
+                            insertScenario(conn, fieldId, sourceTableId, s, status);
                         }
                     }
                 }
@@ -80,7 +88,7 @@ public class JdbcWriter {
     }
 
     // ---- Phase 0: project ----
-    private static Long upsertProject(Connection conn, String appName, com.datamap.scanner.model.ScanProject p) throws Exception {
+    private static Long upsertProject(Connection conn, String appName, com.datamap.scanner.model.ScanProject p, int status) throws Exception {
         Long id = selectLong(conn, "SELECT id FROM project WHERE app_name = ?", appName);
         if (id != null) {
             // 已存在则更新 git 信息（保留手工 description）
@@ -95,18 +103,19 @@ public class JdbcWriter {
             return id;
         }
         try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO project (app_name, git_repo_url, git_local_path, status) VALUES (?, ?, ?, 0)",
+                "INSERT INTO project (app_name, git_repo_url, git_local_path, status) VALUES (?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, appName);
             ps.setString(2, p.gitRepoUrl);
             ps.setString(3, p.gitLocalPath);
+            ps.setInt(4, status);
             ps.executeUpdate();
             return generatedKey(ps);
         }
     }
 
     // ---- Phase 1: table_info / table_field ----
-    private static Long upsertTable(Connection conn, Long projectId, ScanTable table) throws Exception {
+    private static Long upsertTable(Connection conn, Long projectId, ScanTable table, int status) throws Exception {
         Long id = selectLong(conn,
                 "SELECT id, table_comment_manual FROM table_info WHERE project_id = ? AND table_name = ?",
                 projectId, table.tableName);
@@ -115,30 +124,33 @@ public class JdbcWriter {
             try (PreparedStatement ps = conn.prepareStatement(
                     "UPDATE table_info SET schema_name = IFNULL(?, schema_name), " +
                     "db_type = IFNULL(?, db_type), " +
-                    "table_comment = CASE WHEN IFNULL(table_comment_manual,0)=1 THEN table_comment ELSE ? END " +
+                    "table_comment = CASE WHEN IFNULL(table_comment_manual,0)=1 THEN table_comment ELSE ? END, " +
+                    "status = ? " +
                     "WHERE id = ?")) {
                 ps.setString(1, table.schemaName);
                 ps.setString(2, table.dbType);
                 ps.setString(3, table.tableComment);
-                ps.setLong(4, id);
+                ps.setInt(4, status);
+                ps.setLong(5, id);
                 ps.executeUpdate();
             }
             return id;
         }
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO table_info (project_id, table_name, schema_name, db_type, table_comment, table_comment_manual, status) " +
-                "VALUES (?, ?, ?, ?, ?, 0, 0)", Statement.RETURN_GENERATED_KEYS)) {
+                "VALUES (?, ?, ?, ?, ?, 0, ?)", Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, projectId);
             ps.setString(2, table.tableName);
             ps.setString(3, table.schemaName);
             ps.setString(4, table.dbType);
             ps.setString(5, table.tableComment);
+            ps.setInt(6, status);
             ps.executeUpdate();
             return generatedKey(ps);
         }
     }
 
-    private static void upsertField(Connection conn, Long tableId, ScanField f) throws Exception {
+    private static void upsertField(Connection conn, Long tableId, ScanField f, int status) throws Exception {
         Long id = selectLong(conn,
                 "SELECT id, field_comment_manual FROM table_field WHERE table_id = ? AND field_name = ?",
                 tableId, f.fieldName);
@@ -147,26 +159,29 @@ public class JdbcWriter {
         if (id != null) {
             try (PreparedStatement ps = conn.prepareStatement(
                     "UPDATE table_field SET field_type = ?, is_pk = ?, is_business_field = ?, " +
-                    "field_comment = CASE WHEN IFNULL(field_comment_manual,0)=1 THEN field_comment ELSE ? END " +
+                    "field_comment = CASE WHEN IFNULL(field_comment_manual,0)=1 THEN field_comment ELSE ? END, " +
+                    "status = ? " +
                     "WHERE id = ?")) {
                 ps.setString(1, f.fieldType);
                 ps.setInt(2, isPk);
                 ps.setInt(3, isBiz);
                 ps.setString(4, f.fieldComment);
-                ps.setLong(5, id);
+                ps.setInt(5, status);
+                ps.setLong(6, id);
                 ps.executeUpdate();
             }
             return;
         }
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO table_field (table_id, field_name, field_comment, field_type, is_pk, is_business_field, field_comment_manual, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, 0, 0)")) {
+                "VALUES (?, ?, ?, ?, ?, ?, 0, ?)")) {
             ps.setLong(1, tableId);
             ps.setString(2, f.fieldName);
             ps.setString(3, f.fieldComment);
             ps.setString(4, f.fieldType);
             ps.setInt(5, isPk);
             ps.setInt(6, isBiz);
+            ps.setInt(7, status);
             ps.executeUpdate();
         }
     }
@@ -182,7 +197,7 @@ public class JdbcWriter {
     }
 
     private static void insertRelation(Connection conn, Long projectId, Long sourceTableId,
-                                       ScanRelation r, Long targetTableId) throws Exception {
+                                       ScanRelation r, Long targetTableId, int status) throws Exception {
         if (targetTableId == null) {
             // 目标表不存在则跳过（避免 target_table_id 全空孤儿行）
             System.err.println("JdbcWriter: skip relation source=" + sourceTableId
@@ -192,7 +207,7 @@ public class JdbcWriter {
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO table_relation (project_id, source_table_id, source_field_name, " +
                 "target_table_id, target_field_name, relation_type, method_signature, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 0)")) {
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setLong(1, projectId);
             ps.setLong(2, sourceTableId);
             ps.setString(3, r.sourceFieldName);
@@ -200,6 +215,7 @@ public class JdbcWriter {
             ps.setString(5, r.targetFieldName);
             ps.setString(6, r.relationType);
             ps.setString(7, r.methodSignature);
+            ps.setInt(8, status);
             ps.executeUpdate();
         }
     }
@@ -212,12 +228,12 @@ public class JdbcWriter {
         }
     }
 
-    private static void insertScenario(Connection conn, Long fieldId, Long tableId, UsageScenario s) throws Exception {
+    private static void insertScenario(Connection conn, Long fieldId, Long tableId, UsageScenario s, int status) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO field_usage_scenario " +
                 "(field_id, table_id, operation_type, scenario_description, method_name, " +
                 " source_table_name, source_api_name, call_chain, entry_info, method_description, description_source, status) " +
-                "VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0)")) {
+                "VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setLong(1, fieldId);
             ps.setLong(2, tableId);
             ps.setString(3, s.operationType);
@@ -228,6 +244,7 @@ public class JdbcWriter {
             ps.setString(8, s.entry == null ? "{}" : MAPPER.writeValueAsString(s.entry));
             ps.setString(9, s.methodDescription);
             ps.setString(10, s.descriptionSource);
+            ps.setInt(11, status);
             ps.executeUpdate();
         }
     }

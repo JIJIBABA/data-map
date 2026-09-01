@@ -27,7 +27,7 @@ public class CrossEntityRelationExtractorTest {
             files = s.filter(p -> p.toString().endsWith(".java")).collect(Collectors.toList());
         }
         AnalysisContext ctx = JavaParser.parse(files, "");
-        Map<String, TypeElement> entities = EntityResolver.resolve(ctx);
+        Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
 
         Map<String, List<ScanRelation>> relations = CrossEntityRelationExtractor.extract(ctx, entities, Map.of());
 

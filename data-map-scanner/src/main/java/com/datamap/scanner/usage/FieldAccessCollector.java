@@ -1,5 +1,6 @@
 package com.datamap.scanner.usage;
 
+import com.datamap.scanner.entity.AliasFieldResolver;
 import com.datamap.scanner.javac.AnalysisContext;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
@@ -16,16 +17,20 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.*;
 
 public class FieldAccessCollector {
-    public static Map<String, List<FieldAccess>> collect(AnalysisContext ctx, Map<String, TypeElement> entities) {
-        // 实体 TypeElement -> 表名 的反向索引，供接收者类型推断使用
-        Map<TypeElement, String> entityToTable = new HashMap<>();
-        for (Map.Entry<String, TypeElement> e : entities.entrySet()) {
-            entityToTable.put(e.getValue(), e.getKey());
-        }
+    /**
+     * @param aliasMap 由 {@link AliasFieldResolver#resolve} 产出的「DTO类型#snake字段 -> 表名.snake字段」别名映射；
+     *                 可为空（向后兼容旧调用方）。接收者非表实体时回退查表用。
+     */
+    public static Map<String, List<FieldAccess>> collect(AnalysisContext ctx, Map<String, List<TypeElement>> entities,
+                                                          Map<String, String> aliasMap) {
+        // 实体 TypeElement -> 表名 的反向索引（覆盖同表多实体），供接收者类型推断使用
+        Map<TypeElement, String> entityToTable = com.datamap.scanner.entity.EntityResolver.reverseIndex(entities);
+        Map<String, String> aliases = aliasMap == null ? Collections.emptyMap() : aliasMap;
 
         Map<String, List<FieldAccess>> result = new HashMap<>();
         for (CompilationUnitTree cu : ctx.units) {
@@ -36,9 +41,9 @@ public class FieldAccessCollector {
                         ExecutableElement method = (ExecutableElement) e;
                         String name = method.getSimpleName().toString();
                         if (name.startsWith("set") && name.length() > 3 && method.getParameters().size() == 1) {
-                            recordByMethod(ctx, cu, node, method, name.substring(3), FieldAccess.Kind.WRITE, result, entities);
+                            recordByMethod(ctx, cu, node, method, name.substring(3), FieldAccess.Kind.WRITE, result, entityToTable, aliases);
                         } else if (name.startsWith("get") && name.length() > 3 && method.getParameters().isEmpty()) {
-                            recordByMethod(ctx, cu, node, method, name.substring(3), FieldAccess.Kind.READ, result, entities);
+                            recordByMethod(ctx, cu, node, method, name.substring(3), FieldAccess.Kind.READ, result, entityToTable, aliases);
                         }
                     } else {
                         // 方法符号解析失败（典型：Lombok 生成的 getter/setter，-proc:none 下源码无方法定义）
@@ -54,7 +59,7 @@ public class FieldAccessCollector {
                             kind = FieldAccess.Kind.WRITE; prop = name.substring(3);
                         }
                         if (prop != null) {
-                            recordByReceiver(ctx, cu, node, prop, kind, result, entityToTable);
+                            recordByReceiver(ctx, cu, node, prop, kind, result, entityToTable, aliases);
                         }
                     }
                     return super.visitMethodInvocation(node, p);
@@ -63,10 +68,24 @@ public class FieldAccessCollector {
                 /** 原路径：方法符号已解析（显式 getter/setter，如 JOOQ Record）。 */
                 private void recordByMethod(AnalysisContext ctx, CompilationUnitTree cu, Tree node,
                                     ExecutableElement method, String prop, FieldAccess.Kind kind,
-                                    Map<String, List<FieldAccess>> result, Map<String, TypeElement> entities) {
-                    String table = tableOf(method.getEnclosingElement(), entities);
-                    if (table == null) return;
+                                    Map<String, List<FieldAccess>> result, Map<TypeElement, String> entityToTable,
+                                    Map<String, String> aliases) {
                     String fieldName = camelToSnake(prop);
+                    String table = tableOf(method.getEnclosingElement(), entityToTable);
+                    // 接收者非表实体时，尝试别名回退：用方法所属类全名 + 字段查别名表
+                    if (table == null && !aliases.isEmpty()) {
+                        String aliasKey = method.getEnclosingElement().toString() + "#" + fieldName;
+                        String aliased = aliases.get(aliasKey);
+                        if (aliased != null) {
+                            String aliasField = aliased.substring(aliased.indexOf('.') + 1);
+                            ExecutableElement caller = enclosingMethod(ctx, cu, node);
+                            if (caller == null) return;
+                            result.computeIfAbsent(aliased, k -> new ArrayList<>())
+                                  .add(new FieldAccess(aliasField, kind, caller));
+                        }
+                        return;
+                    }
+                    if (table == null) return;
                     ExecutableElement caller = enclosingMethod(ctx, cu, node);
                     if (caller == null) return;
                     result.computeIfAbsent(table + "." + fieldName, k -> new ArrayList<>())
@@ -76,15 +95,33 @@ public class FieldAccessCollector {
                 /** 回退路径：方法符号未解析（Lombok getter/setter）。用接收者声明类型推断实体表。 */
                 private void recordByReceiver(AnalysisContext ctx, CompilationUnitTree cu, Tree node,
                                     String prop, FieldAccess.Kind kind,
-                                    Map<String, List<FieldAccess>> result, Map<TypeElement, String> entityToTable) {
+                                    Map<String, List<FieldAccess>> result, Map<TypeElement, String> entityToTable,
+                                    Map<String, String> aliases) {
                     if (!(node instanceof MethodInvocationTree)) return;
                     ExpressionTree sel = ((MethodInvocationTree) node).getMethodSelect();
                     if (!(sel instanceof MemberSelectTree)) return;
                     ExpressionTree receiver = ((MemberSelectTree) sel).getExpression();
                     if (receiver == null) return;
-                    String table = tableOfReceiver(ctx, cu, receiver, entityToTable);
-                    if (table == null) return;
                     String fieldName = camelToSnake(prop);
+                    String table = tableOfReceiver(ctx, cu, receiver, entityToTable);
+                    // 接收者非表实体时，尝试别名回退：用接收者声明类型全名 + 字段查别名表
+                    if (table == null && !aliases.isEmpty()) {
+                        TypeElement recvType = AliasFieldResolver.receiverType(ctx,
+                                TreePath.getPath(cu, receiver));
+                        if (recvType != null) {
+                            String aliasKey = recvType.getQualifiedName().toString() + "#" + fieldName;
+                            String aliased = aliases.get(aliasKey);
+                            if (aliased != null) {
+                                String aliasField = aliased.substring(aliased.indexOf('.') + 1);
+                                ExecutableElement caller = enclosingMethod(ctx, cu, node);
+                                if (caller == null) return;
+                                result.computeIfAbsent(aliased, k -> new ArrayList<>())
+                                      .add(new FieldAccess(aliasField, kind, caller));
+                            }
+                        }
+                        return;
+                    }
+                    if (table == null) return;
                     ExecutableElement caller = enclosingMethod(ctx, cu, node);
                     if (caller == null) return;
                     result.computeIfAbsent(table + "." + fieldName, k -> new ArrayList<>())
@@ -119,12 +156,9 @@ public class FieldAccessCollector {
         return null;
     }
 
-    private static String tableOf(Element enclosing, Map<String, TypeElement> entities) {
+    private static String tableOf(Element enclosing, Map<TypeElement, String> entityToTable) {
         if (!(enclosing instanceof TypeElement)) return null;
-        for (Map.Entry<String, TypeElement> e : entities.entrySet()) {
-            if (e.getValue().equals(enclosing)) return e.getKey();
-        }
-        return null;
+        return entityToTable.get(enclosing);
     }
 
     private static ExecutableElement enclosingMethod(AnalysisContext ctx, CompilationUnitTree cu, Tree node) {

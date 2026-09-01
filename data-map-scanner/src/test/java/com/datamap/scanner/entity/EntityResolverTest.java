@@ -26,8 +26,8 @@ public class EntityResolverTest {
 
     @Test
     public void findsOrderEntityByTableName() throws Exception {
-        Map<String, TypeElement> map = EntityResolver.resolve(ctx());
+        Map<String, java.util.List<TypeElement>> map = EntityResolver.resolve(ctx());
         assertTrue(map.containsKey("tb_order"));
-        assertEquals("Order", map.get("tb_order").getSimpleName().toString());
+        assertEquals("Order", map.get("tb_order").get(0).getSimpleName().toString());
     }
 }

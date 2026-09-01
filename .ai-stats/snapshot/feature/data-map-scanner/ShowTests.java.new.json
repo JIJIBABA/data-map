@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "file_path": "ShowTests.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": null,
+  "category": "TEST",
+  "provider": "claude-code",
+  "tool_name": "Write",
+  "created_at": "2026-08-31T20:46:18.740",
+  "updated_at": "2026-08-31T20:46:18.740",
+  "ai_hashes": [
+    "34ebd5a9e3e94ace",
+    "392e746a4d082b16",
+    "3e65c8e21efc2ea1",
+    "82df7d74c1617eb1",
+    "cd758dacd7819b20",
+    "d30f352e394f918c",
+    "d3592f9191a5e588",
+    "f134144390930a6f",
+    "ff3f2cc59b503618",
+    "ffee2b7434c97b91"
+  ]
+}

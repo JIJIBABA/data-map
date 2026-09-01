@@ -1,0 +1,33 @@
+{
+  "version": "1",
+  "file_path": "inspect-scan2.py",
+  "branch": "feature/data-map-scanner",
+  "base_blob": null,
+  "category": "SOURCE_CODE",
+  "provider": "claude-code",
+  "tool_name": "Write",
+  "created_at": "2026-08-31T19:04:44.719",
+  "updated_at": "2026-08-31T19:04:44.719",
+  "ai_hashes": [
+    "1181208cdc350548",
+    "150147cbbae19a9f",
+    "1503218f879a7fa8",
+    "2c7fca4838fd4578",
+    "3bede3b37ec6a93e",
+    "3ec70594d368e0f0",
+    "41b6ca576a48023c",
+    "440da12a7d8294e9",
+    "4cb048b3b895c5ac",
+    "4d148db5db543335",
+    "536f0558060099a3",
+    "64e114e1ad4dff2d",
+    "671affaf6508a4e7",
+    "7cbcc30f62e2e174",
+    "834bbe42c5242a93",
+    "8d82299068379b9e",
+    "a527f121e412c0b4",
+    "a6b131c10bc36059",
+    "f463cb60d04bd582",
+    "fffffebad1ecbcc7"
+  ]
+}

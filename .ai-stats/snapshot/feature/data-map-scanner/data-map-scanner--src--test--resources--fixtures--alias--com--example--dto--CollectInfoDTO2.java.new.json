@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/test/resources/fixtures/alias/com/example/dto/CollectInfoDTO2.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": null,
+  "category": "TEST",
+  "provider": "claude-code",
+  "tool_name": "Write",
+  "created_at": "2026-08-31T18:49:10.514",
+  "updated_at": "2026-08-31T18:49:10.514",
+  "ai_hashes": [
+    "05e4009d1b413b63",
+    "27cb0aa3e37cc063",
+    "5da8493aa5d9ea55",
+    "d84113ff94faa3c0",
+    "e829f8d6d2f5c053",
+    "ee9276339f399a43"
+  ]
+}

@@ -31,11 +31,8 @@ import java.util.Map;
 public class CrossEntityRelationExtractor {
 
     public static Map<String, List<ScanRelation>> extract(AnalysisContext ctx,
-            Map<String, TypeElement> entities, Map<String, TypeElement> jooqTables) {
-        Map<TypeElement, String> entityTableByType = new HashMap<>();
-        for (Map.Entry<String, TypeElement> e : entities.entrySet()) {
-            entityTableByType.put(e.getValue(), e.getKey());
-        }
+            Map<String, java.util.List<TypeElement>> entities, Map<String, TypeElement> jooqTables) {
+        Map<TypeElement, String> entityTableByType = com.datamap.scanner.entity.EntityResolver.reverseIndex(entities);
 
         Map<String, List<ScanRelation>> result = new HashMap<>();
         for (CompilationUnitTree cu : ctx.units) {

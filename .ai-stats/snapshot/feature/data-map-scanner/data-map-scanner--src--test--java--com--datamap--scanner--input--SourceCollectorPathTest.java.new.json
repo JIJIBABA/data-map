@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/test/java/com/datamap/scanner/input/SourceCollectorPathTest.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": null,
+  "category": "TEST",
+  "provider": "claude-code",
+  "tool_name": "Write",
+  "created_at": "2026-08-31T20:36:51.684",
+  "updated_at": "2026-08-31T20:36:51.684",
+  "ai_hashes": [
+    "08ae40d41f86817c",
+    "135405b4cb3b8543",
+    "2192dc7dc9a17f57",
+    "25a4345c28db7c20",
+    "27d8503f7431008b",
+    "3b556f1742d3521e",
+    "3cc418d80832fd72",
+    "60902f7f3a89e502",
+    "681aa6dc7eb6314b",
+    "90cc8db0ebbc1888",
+    "a0c49b3e70327944",
+    "a704bd238aa09218",
+    "aef2dd53a8fe5ca0",
+    "ba69ab1bd14ea417",
+    "c7dee19b1ae17e33",
+    "ce6f33a9702082f8"
+  ]
+}

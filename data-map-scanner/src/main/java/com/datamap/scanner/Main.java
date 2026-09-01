@@ -64,8 +64,14 @@ public class Main {
         }
         if (opts.containsKey("db")) {
             String[] parts = opts.get("db").split(";", 3);
-            com.datamap.scanner.persist.JdbcWriter.write(result, parts[0], parts[1], parts[2], appName);
-            System.out.println("JDBC 直连写入完成");
+            int status = 1;
+            String statusOpt = opts.get("status");
+            if (statusOpt != null && !statusOpt.isEmpty() && !"true".equals(statusOpt)) {
+                try { status = Integer.parseInt(statusOpt.trim()); }
+                catch (NumberFormatException ignore) { /* 保持默认 1 */ }
+            }
+            com.datamap.scanner.persist.JdbcWriter.write(result, parts[0], parts[1], parts[2], appName, status);
+            System.out.println("JDBC 直连写入完成 (status=" + status + ")");
         }
     }
 

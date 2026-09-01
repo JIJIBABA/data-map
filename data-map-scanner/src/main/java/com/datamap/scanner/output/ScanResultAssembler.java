@@ -33,14 +33,16 @@ public class ScanResultAssembler {
     public static ScanResult assemble(AnalysisContext ctx, List<Path> xmlFiles,
                                       String appName, String scanType, Set<String> tableFilter,
                                       Set<String> changedFiles) throws Exception {
-        Map<String, TypeElement> entities = EntityResolver.resolve(ctx);
+        Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
         CallGraph graph = CallGraphBuilder.build(ctx);
         Set<EntryPoint> entries = EntryPointResolver.resolve(ctx);
         Set<ExecutableElement> entryMethods = entries.stream().map(ep -> ep.method).collect(Collectors.toSet());
-        Map<String, List<FieldAccess>> accesses = FieldAccessCollector.collect(ctx, entities);
-        Map<String, List<ScanRelation>> xmlRelations = relationsBySourceTable(xmlFiles);
 
         Map<String, TypeElement> jooqTables = JooqTableResolver.resolve(ctx);
+        // 实体演变别名解析：表实体字段→DTO 的传递闭合别名，供字段访问收集器回退查表
+        Map<String, String> aliasMap = com.datamap.scanner.entity.AliasFieldResolver.resolve(ctx, entities, jooqTables);
+        Map<String, List<FieldAccess>> accesses = FieldAccessCollector.collect(ctx, entities, aliasMap);
+        Map<String, List<ScanRelation>> xmlRelations = relationsBySourceTable(xmlFiles);
         Map<String, List<JooqFieldAccess>> jooqAccesses = JooqFieldAccessCollector.collect(ctx, jooqTables);
         Map<String, List<ScanRelation>> jooqRelations = JooqRelationExtractor.extract(ctx, jooqTables);
 
@@ -49,10 +51,13 @@ public class ScanResultAssembler {
 
         Map<String, List<ScanField>> fieldsByName = new HashMap<>();
         Map<String, ScanTable> tablesByName = new LinkedHashMap<>();
-        for (Map.Entry<String, TypeElement> en : entities.entrySet()) {
+        for (Map.Entry<String, java.util.List<TypeElement>> en : entities.entrySet()) {
             String tableName = en.getKey();
             if (tableFilter != null && !tableFilter.isEmpty() && !tableFilter.contains(tableName)) continue;
-            List<ScanField> fields = FieldExtractor.extract(en.getValue(), ctx);
+            // 同一表可能有多个 @TableName 实体（如 core CollectInfo 与 infra CollectInfoDO），
+            // 取字段最丰富的一个用于字段/注释提取；访问归表由 reverseIndex 覆盖全部实体。
+            TypeElement representative = pickRepresentativeEntity(en.getValue());
+            List<ScanField> fields = FieldExtractor.extract(representative, ctx);
             List<ScanRelation> relations = mergeRelations(xmlRelations, assignmentRelations, tableName);
             List<UsageScenario> scenarios = new ArrayList<>();
             for (ScanField f : fields) {
@@ -69,7 +74,8 @@ public class ScanResultAssembler {
                 }
             }
             fieldsByName.put(tableName, fields);
-            tablesByName.put(tableName, new ScanTable(tableName, "", "", "MYSQL", fields, relations, scenarios));
+            String tableComment = com.datamap.scanner.entity.EntityResolver.tableComment(representative, ctx);
+            tablesByName.put(tableName, new ScanTable(tableName, tableComment, "", "MYSQL", fields, relations, scenarios));
         }
 
         for (Map.Entry<String, TypeElement> en : jooqTables.entrySet()) {
@@ -179,5 +185,23 @@ public class ScanResultAssembler {
 
     private static String qualified(ExecutableElement m) {
         return m.getEnclosingElement().toString() + "." + m.getSimpleName();
+    }
+
+    /** 同表多实体时，取实例字段数最多的实体作为代表（字段/注释提取）。 */
+    private static TypeElement pickRepresentativeEntity(java.util.List<TypeElement> candidates) {
+        if (candidates.size() <= 1) return candidates.isEmpty() ? null : candidates.get(0);
+        TypeElement best = candidates.get(0);
+        int bestCnt = -1;
+        for (TypeElement te : candidates) {
+            int cnt = 0;
+            try {
+                for (javax.lang.model.element.Element e : te.getEnclosedElements()) {
+                    if (e.getKind() == javax.lang.model.element.ElementKind.FIELD
+                        && !e.getModifiers().contains(javax.lang.model.element.Modifier.STATIC)) cnt++;
+                }
+            } catch (RuntimeException ignored) {}
+            if (cnt > bestCnt) { bestCnt = cnt; best = te; }
+        }
+        return best;
     }
 }
