@@ -3,6 +3,10 @@ package com.datamap.mcp;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class McpToolResultTest {
@@ -28,5 +32,16 @@ class McpToolResultTest {
         McpToolResult r = McpToolResult.fromPayload(JsonNodeFactory.instance.objectNode().put("k", "v"));
         assertEquals("{\"k\":\"v\"}", r.getContent().get(0).get("text").asText());
         assertFalse(r.isError());
+    }
+
+    @Test
+    void fromPayload_serializesLocalDateTimeAsIso8601() {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("createdAt", LocalDateTime.of(2026, 9, 2, 15, 30, 45));
+        McpToolResult r = McpToolResult.fromPayload(payload);
+        assertFalse(r.isError());
+        String json = r.getContent().get(0).get("text").asText();
+        assertTrue(json.contains("\"2026-09-02T15:30:45\""),
+            "LocalDateTime should serialize as ISO-8601 text, got: " + json);
     }
 }
