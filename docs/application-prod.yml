@@ -1,0 +1,38 @@
+# data-map backend 生产配置（外部覆盖，不改 jar）
+# 部署方案：后端直接托管前端，一个 java -jar 搞定，无需 Nginx
+# 启动命令（在 ~/datamap-deploy 目录，或手动部署时）:
+#   nohup java -jar ~/datamap/backend/data-map-backend-1.0.0.jar \
+#     --spring.config.additional-location=file:$HOME/datamap/config/ \
+#     --spring.profiles.active=prod \
+#     > ~/datamap/backend/backend.log 2>&1 &
+# 访问: http://12.0.216.77:8966/
+#
+# ⚠️ web-root 必须指向实际部署 dist 的绝对路径。
+#   脚本部署到 ~/datamap，scfadmin 家目录展开为 /home/scfadmin/datamap/frontend/dist
+#   若换用户或目录，同步改这里，否则首页 404/白屏。
+
+server:
+  port: 8966
+
+spring:
+  datasource:
+    # 元数据库（与开发环境同一套；若物理机要连本地 MySQL 则改此处）
+    url: jdbc:mysql://12.0.221.123:3311/ccbscf_edt_d1?characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8&allowMultiQueries=true&allowPublicKeyRetrieval=true&autoReconnect=true
+    username: ccbscf_edt_dev
+    password: EDTd1Pass!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+  configuration:
+    map-underscore-to-camel-case: true
+    # 生产关闭 SQL 日志，排障时改成 org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 前端静态文件目录（后端托管）
+# 指向 dist 目录，前端更新只替换该目录，不用重打 jar
+datamap:
+  web-root: /home/scfadmin/datamap/frontend/dist

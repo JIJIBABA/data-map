@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/test/java/com/datamap/scanner/entity/AliasFieldResolverTest.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": "5f1329def73cddb62d8ca2e6df4333b322cb07ea",
+  "category": "TEST",
+  "provider": "claude-code",
+  "tool_name": "Edit",
+  "created_at": "2026-09-16T10:34:19.904",
+  "updated_at": "2026-09-16T10:34:23.191",
+  "ai_hashes": [
+    "2889e0ad9bd8aa01",
+    "c01899a7c1cadc18"
+  ]
+}

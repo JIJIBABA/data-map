@@ -8,6 +8,7 @@ import javax.lang.model.element.TypeElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ public class AliasFieldResolverTest {
         }
         AnalysisContext ctx = JavaParser.parse(files, "");
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
-        return AliasFieldResolver.resolve(ctx, entities, Map.of());
+        return AliasFieldResolver.resolve(ctx, entities, Collections.emptyMap());
     }
 
     @Test

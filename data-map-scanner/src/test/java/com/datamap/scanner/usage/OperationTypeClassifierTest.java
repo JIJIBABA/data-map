@@ -27,7 +27,7 @@ public class OperationTypeClassifierTest {
         AnalysisContext ctx = ctx();
         CallGraph g = CallGraphBuilder.build(ctx);
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
-        Map<String, List<FieldAccess>> all = FieldAccessCollector.collect(ctx, entities, Map.of());
+        Map<String, List<FieldAccess>> all = FieldAccessCollector.collect(ctx, entities, Collections.emptyMap());
         List<FieldAccess> accesses = all.get("tb_order.order_status");
         FieldAccess create = accesses.stream()
             .filter(a -> a.method.getSimpleName().contentEquals("createOrder")).findFirst().get();
@@ -39,7 +39,7 @@ public class OperationTypeClassifierTest {
         AnalysisContext ctx = ctx();
         CallGraph g = CallGraphBuilder.build(ctx);
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
-        Map<String, List<FieldAccess>> all = FieldAccessCollector.collect(ctx, entities, Map.of());
+        Map<String, List<FieldAccess>> all = FieldAccessCollector.collect(ctx, entities, Collections.emptyMap());
         List<FieldAccess> accesses = all.get("tb_order.order_status");
         FieldAccess cancel = accesses.stream()
             .filter(a -> a.method.getSimpleName().contentEquals("cancelOrder")).findFirst().get();

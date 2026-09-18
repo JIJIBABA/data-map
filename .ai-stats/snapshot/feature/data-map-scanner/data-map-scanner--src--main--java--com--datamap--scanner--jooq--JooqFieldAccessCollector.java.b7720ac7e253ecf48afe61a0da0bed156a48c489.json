@@ -1,0 +1,21 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/main/java/com/datamap/scanner/jooq/JooqFieldAccessCollector.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": "b7720ac7e253ecf48afe61a0da0bed156a48c489",
+  "category": "SOURCE_CODE",
+  "provider": "claude-code",
+  "tool_name": "Edit",
+  "created_at": "2026-09-16T10:32:26.472",
+  "updated_at": "2026-09-16T10:32:40.730",
+  "ai_hashes": [
+    "0fc07beaacd33650",
+    "2889e0ad9bd8aa01",
+    "4678980f2f67c9fb",
+    "5054d93c52779265",
+    "527b9faae536d2de",
+    "9702b088e1e04941",
+    "d10c01cb5fa1a855",
+    "f21b6af4795c6b14"
+  ]
+}

@@ -35,9 +35,9 @@ public class OperationTypeClassifier {
         return "UNRESOLVED";
     }
 
-    private static final Set<String> MAPPER_METHODS = Set.of(
+    private static final Set<String> MAPPER_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "insert","save","updateById","update","updateBatchById","deleteById","delete",
-        "removeById","remove","selectById","selectOne","selectList","getById");
+        "removeById","remove","selectById","selectOne","selectList","getById")));
 
     /** 扫描单个方法方法体的 mapper 方法名（仅当接收者为 Mapper/Dao 类型时计入）。 */
     private static Set<String> mapperCallsIn(ExecutableElement method, AnalysisContext ctx) {

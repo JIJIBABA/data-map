@@ -1,0 +1,17 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/main/java/com/datamap/scanner/entity/EntityResolver.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": "8d55fa275a1d27a28cd222a43fd3eab211cb87aa",
+  "category": "SOURCE_CODE",
+  "provider": "claude-code",
+  "tool_name": "Edit",
+  "created_at": "2026-09-16T10:38:12.508",
+  "updated_at": "2026-09-16T11:33:16.739",
+  "ai_hashes": [
+    "658400ade946cca0",
+    "94f70c38940cab59",
+    "bab49e42349563eb",
+    "f8c349bd60e0c241"
+  ]
+}

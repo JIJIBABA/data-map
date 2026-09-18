@@ -61,13 +61,13 @@ public class ScanResultAssembler {
             List<ScanRelation> relations = mergeRelations(xmlRelations, assignmentRelations, tableName);
             List<UsageScenario> scenarios = new ArrayList<>();
             for (ScanField f : fields) {
-                for (FieldAccess a : accesses.getOrDefault(tableName + "." + f.fieldName, List.of())) {
+                for (FieldAccess a : accesses.getOrDefault(tableName + "." + f.fieldName, Collections.emptyList())) {
                     String op = OperationTypeClassifier.classify(a, graph, ctx);
                     String[] desc = MethodDescriptionExtractor.extract(a.method, ctx);
                     List<List<ExecutableElement>> paths = ChainTraverser.traverse(a.method, graph, entryMethods, 10);
                     if (!DiffFilter.affected(a.method, paths, changedFiles, ctx)) continue;
                     EntryInfo entry = paths.isEmpty() ? null : entryOf(paths.get(0).get(0), entries);
-                    List<CallChainStep> chain = paths.isEmpty() ? List.of()
+                    List<CallChainStep> chain = paths.isEmpty() ? Collections.emptyList()
                         : steps(paths.get(0), entry == null ? "OTHER" : entry.type);
                     scenarios.add(new UsageScenario(f.fieldName, op, qualified(a.method), desc[0], desc[1],
                         "", entry == null ? "" : entry.apiName, chain, entry));
@@ -94,7 +94,7 @@ public class ScanResultAssembler {
         for (Map.Entry<String, ScanTable> e : tablesByName.entrySet()) {
             ScanTable t = e.getValue();
             List<ScanRelation> merged = new ArrayList<>(t.relations);
-            merged.addAll(pkFkRelations.getOrDefault(t.tableName, List.of()));
+            merged.addAll(pkFkRelations.getOrDefault(t.tableName, Collections.emptyList()));
             e.setValue(new ScanTable(t.tableName, t.tableComment, t.schemaName, t.dbType,
                 t.fields, dedupeRelations(merged), t.usageScenarios));
         }
@@ -109,12 +109,12 @@ public class ScanResultAssembler {
             Set<ExecutableElement> entryMethods, Set<String> changedFiles, AnalysisContext ctx) {
         List<UsageScenario> scenarios = new ArrayList<>();
         for (ScanField f : fields) {
-            for (JooqFieldAccess a : accesses.getOrDefault(tableName + "." + f.fieldName, List.of())) {
+            for (JooqFieldAccess a : accesses.getOrDefault(tableName + "." + f.fieldName, Collections.emptyList())) {
                 addJooqScenario(scenarios, a, graph, entries, entryMethods, changedFiles, ctx);
             }
         }
         // 表级 DELETE（fieldName=""，operationType=DELETE）
-        for (JooqFieldAccess a : accesses.getOrDefault(tableName + ".", List.of())) {
+        for (JooqFieldAccess a : accesses.getOrDefault(tableName + ".", Collections.emptyList())) {
             addJooqScenario(scenarios, a, graph, entries, entryMethods, changedFiles, ctx);
         }
         return scenarios;
@@ -127,7 +127,7 @@ public class ScanResultAssembler {
         List<List<ExecutableElement>> paths = ChainTraverser.traverse(a.method, graph, entryMethods, 10);
         if (!DiffFilter.affected(a.method, paths, changedFiles, ctx)) return;
         EntryInfo entry = paths.isEmpty() ? null : entryOf(paths.get(0).get(0), entries);
-        List<CallChainStep> chain = paths.isEmpty() ? List.of()
+        List<CallChainStep> chain = paths.isEmpty() ? Collections.emptyList()
             : steps(paths.get(0), entry == null ? "OTHER" : entry.type);
         scenarios.add(new UsageScenario(a.fieldName, a.operationType, qualified(a.method), desc[0], desc[1],
             "", entry == null ? "" : entry.apiName, chain, entry));
@@ -146,8 +146,8 @@ public class ScanResultAssembler {
 
     private static List<ScanRelation> mergeRelations(Map<String, List<ScanRelation>> primary,
             Map<String, List<ScanRelation>> secondary, String tableName) {
-        List<ScanRelation> primaryRels = primary.getOrDefault(tableName, List.of());
-        List<ScanRelation> secondaryRels = secondary.getOrDefault(tableName, List.of());
+        List<ScanRelation> primaryRels = primary.getOrDefault(tableName, Collections.emptyList());
+        List<ScanRelation> secondaryRels = secondary.getOrDefault(tableName, Collections.emptyList());
         if (secondaryRels.isEmpty()) return primaryRels;
         List<ScanRelation> merged = new ArrayList<>(primaryRels);
         merged.addAll(secondaryRels);
@@ -160,8 +160,8 @@ public class ScanResultAssembler {
         List<ScanRelation> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (ScanRelation r : relations) {
-            String key = r.sourceFieldName + " " + r.targetTableName + " "
-                    + r.targetFieldName + " " + r.relationType;
+            String key = r.sourceFieldName + " " + r.targetTableName + " "
+                    + r.targetFieldName + " " + r.relationType;
             if (seen.add(key)) out.add(r);
         }
         return out;

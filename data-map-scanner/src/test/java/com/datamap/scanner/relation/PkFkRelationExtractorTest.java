@@ -4,6 +4,8 @@ import com.datamap.scanner.model.ScanField;
 import com.datamap.scanner.model.ScanRelation;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,10 +15,10 @@ public class PkFkRelationExtractorTest {
 
     @Test
     public void matchesPkFkBySuffix() {
-        Map<String, List<ScanField>> tables = Map.of(
-            "tb_a", List.of(new ScanField("pk_param", "", "BIGINT", true, true)),
-            "tb_b", List.of(new ScanField("fk_param", "", "BIGINT", false, true))
-        );
+        Map<String, List<ScanField>> tables = Collections.unmodifiableMap(new HashMap<String, List<ScanField>>() {{
+            put("tb_a", Collections.singletonList(new ScanField("pk_param", "", "BIGINT", true, true)));
+            put("tb_b", Collections.singletonList(new ScanField("fk_param", "", "BIGINT", false, true)));
+        }});
 
         Map<String, List<ScanRelation>> relations = PkFkRelationExtractor.extract(tables);
 
@@ -31,10 +33,10 @@ public class PkFkRelationExtractorTest {
 
     @Test
     public void matchesCaseInsensitively() {
-        Map<String, List<ScanField>> tables = Map.of(
-            "T_A", List.of(new ScanField("PK_PARAM", "", "BIGINT", true, true)),
-            "T_B", List.of(new ScanField("FK_PARAM", "", "BIGINT", false, true))
-        );
+        Map<String, List<ScanField>> tables = Collections.unmodifiableMap(new HashMap<String, List<ScanField>>() {{
+            put("T_A", Collections.singletonList(new ScanField("PK_PARAM", "", "BIGINT", true, true)));
+            put("T_B", Collections.singletonList(new ScanField("FK_PARAM", "", "BIGINT", false, true)));
+        }});
 
         Map<String, List<ScanRelation>> relations = PkFkRelationExtractor.extract(tables);
 
@@ -46,10 +48,10 @@ public class PkFkRelationExtractorTest {
 
     @Test
     public void noMatchWithoutFk() {
-        Map<String, List<ScanField>> tables = Map.of(
-            "tb_a", List.of(new ScanField("pk_param", "", "BIGINT", true, true)),
-            "tb_b", List.of(new ScanField("param", "", "BIGINT", false, true))
-        );
+        Map<String, List<ScanField>> tables = Collections.unmodifiableMap(new HashMap<String, List<ScanField>>() {{
+            put("tb_a", Collections.singletonList(new ScanField("pk_param", "", "BIGINT", true, true)));
+            put("tb_b", Collections.singletonList(new ScanField("param", "", "BIGINT", false, true)));
+        }});
 
         Map<String, List<ScanRelation>> relations = PkFkRelationExtractor.extract(tables);
 

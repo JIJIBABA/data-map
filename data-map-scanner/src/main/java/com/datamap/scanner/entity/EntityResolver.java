@@ -1,6 +1,7 @@
 package com.datamap.scanner.entity;
 
 import com.datamap.scanner.javac.AnalysisContext;
+import com.datamap.scanner.util.DocTreeText;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.AssignmentTree;
@@ -61,9 +62,9 @@ public class EntityResolver {
         if (entity == null) return "";
         try {
             DocTrees docTrees = DocTrees.instance(ctx.task);
-            DocCommentTree doc = docTrees.getDocCommentTree(entity);
-            if (doc != null && doc.getFullBody() != null) {
-                String s = doc.getFullBody().toString().trim();
+            DocCommentTree doc = docTrees.getDocCommentTree(ctx.trees.getPath(entity));
+            if (doc != null) {
+                String s = DocTreeText.fullBody(doc);
                 return s == null ? "" : s;
             }
         } catch (RuntimeException ignored) {

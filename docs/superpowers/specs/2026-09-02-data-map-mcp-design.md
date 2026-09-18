@@ -95,16 +95,70 @@ Notes:
 
 ## 7. Error Handling
 
-| Case | Behavior |
-|---|---|
-| Tool throws (DB error, NPE, …) | Caught in `McpController` dispatch. Return `tools/call` **result** with `isError:true` and the message as text content. Per MCP spec, a tool failure is a tool result, not a transport error. |
-| Unknown tool name | JSON-RPC error `-32601` (method not found). |
-| Missing required arg / wrong type | Validate against the tool's `inputSchema`. Failure → JSON-RPC error `-32602` (invalid params) with a description. |
-| Empty result (valid query, no match) | Not an error. Return `content:[{type:"text", text:"[]"}]`. |
-| Malformed JSON / not JSON-RPC | JSON-RPC error `-32700` (parse error). |
-| Unknown JSON-RPC method | JSON-RPC error `-32601` (method not found). Handled methods: `initialize`, `notifications/initialized`, `tools/list`, `tools/call`. |
-| `notifications/initialized` (id null) | HTTP `204`, no body. |
-| Duplicate `initialize` | Spec allows re-initialize; return a fresh server-info result + new session id. Stateless, so harmless. |
+| Case | Behavior                                                   |
+| ---- | ---------------------------------------------------------- |
+| Tool | Caught in `McpController` dispatch. Return `tools/call`    |
+| thro | **result** with `isError:true` and the message as text     |
+| ws   | content. Per MCP spec, a tool failure is a tool result,    |
+| (DB  | not a transport error.                                     |
+| erro |                                                            |
+| r,   |                                                            |
+| NPE, |                                                            |
+| …)   |                                                            |
+| Unkn | JSON-RPC error `-32601` (method not found).                |
+| own  |                                                            |
+| tool |                                                            |
+| name |                                                            |
+| Miss | Validate against the tool's `inputSchema` . Failure →      |
+| ing  | JSON-RPC error `-32602` (invalid params) with a            |
+| requ | description.                                               |
+| ired |                                                            |
+| arg  |                                                            |
+| /    |                                                            |
+| wron |                                                            |
+| g    |                                                            |
+| type |                                                            |
+| Empt | Not an error. Return `content:[{type:"text", text:"[]"}]`  |
+| y    | .                                                          |
+| resu |                                                            |
+| lt   |                                                            |
+| (val |                                                            |
+| id   |                                                            |
+| quer |                                                            |
+| y,   |                                                            |
+| no   |                                                            |
+| matc |                                                            |
+| h)   |                                                            |
+| Malf | JSON-RPC error `-32700` (parse error).                     |
+| orme |                                                            |
+| d    |                                                            |
+| JSON |                                                            |
+| /    |                                                            |
+| not  |                                                            |
+| JSON |                                                            |
+| -RPC |                                                            |
+| Unkn | JSON-RPC error `-32601` (method not found). Handled        |
+| own  | methods: `initialize` , `notifications/initialized` ,      |
+| JSON | `tools/list` , `tools/call` .                              |
+| -RPC |                                                            |
+| meth |                                                            |
+| od   |                                                            |
+| `not | HTTP `204` , no body.                                      |
+| ific |                                                            |
+| atio |                                                            |
+| ns/i |                                                            |
+| niti |                                                            |
+| aliz |                                                            |
+| ed`  |                                                            |
+| (id  |                                                            |
+| null |                                                            |
+| )    |                                                            |
+| Dupl | Spec allows re-initialize; return a fresh server-info      |
+| icat | result + new session id. Stateless, so harmless.           |
+| e    |                                                            |
+| `ini |                                                            |
+| tial |                                                            |
+| ize` |                                                            |
 
 Argument validation strategy: lightweight and pragmatic — hand-rolled (check required keys present + type via `instanceof`). A ~30-line validator covers the 7 tools with simple types. If the catalog grows, introduce a real `json-schema-validator` library.
 

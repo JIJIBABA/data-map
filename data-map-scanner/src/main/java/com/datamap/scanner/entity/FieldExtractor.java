@@ -2,8 +2,7 @@ package com.datamap.scanner.entity;
 
 import com.datamap.scanner.javac.AnalysisContext;
 import com.datamap.scanner.model.ScanField;
-import com.sun.source.doctree.DocCommentTree;
-import com.sun.source.util.DocTrees;
+import com.datamap.scanner.util.DocTreeText;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -16,15 +15,12 @@ import java.util.List;
 public class FieldExtractor {
     public static List<ScanField> extract(TypeElement entity, AnalysisContext ctx) {
         List<ScanField> fields = new ArrayList<>();
-        DocTrees docTrees = DocTrees.instance(ctx.task);
         for (VariableElement field : fieldsOf(entity, ctx)) {
             if (field.getKind() != ElementKind.FIELD) continue;
             if (field.getModifiers().contains(Modifier.STATIC)) continue;
             String column = camelToSnake(field.getSimpleName().toString());
             boolean pk = hasAnnotation(ctx, field, "TableId");
-            String comment = "";
-            DocCommentTree doc = docTrees.getDocCommentTree(field);
-            if (doc != null) comment = doc.getFullBody().toString().trim();
+            String comment = DocTreeText.fullBody(field, ctx);
             String jdbcType = JdbcTypeMapper.map(field.asType().toString());
             fields.add(new ScanField(column, comment, jdbcType, pk, CommonFieldFilter.isBusiness(column)));
         }

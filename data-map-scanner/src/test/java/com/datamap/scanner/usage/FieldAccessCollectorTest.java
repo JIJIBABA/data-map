@@ -20,7 +20,7 @@ public class FieldAccessCollectorTest {
         }
         AnalysisContext ctx = JavaParser.parse(files, "");
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
-        return FieldAccessCollector.collect(ctx, entities, Map.of());
+        return FieldAccessCollector.collect(ctx, entities, Collections.emptyMap());
     }
 
     @Test
@@ -45,7 +45,7 @@ public class FieldAccessCollectorTest {
         }
         AnalysisContext ctx = JavaParser.parse(files, "");
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
-        Map<String, String> aliases = AliasFieldResolver.resolve(ctx, entities, Map.of());
+        Map<String, String> aliases = AliasFieldResolver.resolve(ctx, entities, Collections.emptyMap());
         Map<String, List<FieldAccess>> all = FieldAccessCollector.collect(ctx, entities, aliases);
 
         // 直接 DTO 读取应归到 t_collect_info.trade_product_mode

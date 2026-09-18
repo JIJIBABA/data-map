@@ -1,0 +1,22 @@
+{
+  "version": "1",
+  "file_path": "data-map-scanner/src/test/java/com/datamap/scanner/relation/PkFkRelationExtractorTest.java",
+  "branch": "feature/data-map-scanner",
+  "base_blob": "2e40cc27734a8445be0f13eecd852744c4404a99",
+  "category": "TEST",
+  "provider": "claude-code",
+  "tool_name": "Edit",
+  "created_at": "2026-09-16T10:33:40.592",
+  "updated_at": "2026-09-16T10:33:50.200",
+  "ai_hashes": [
+    "2650d525efe98d76",
+    "2889e0ad9bd8aa01",
+    "39c243e971612c64",
+    "583fd03e3bf0ced0",
+    "5d3224bdf75a694b",
+    "7d0a73e9ae177d02",
+    "9f14bbcc49f6defa",
+    "a470fb1028f8b4ca",
+    "e13d1895340fe203"
+  ]
+}

@@ -22,7 +22,10 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,12 +39,12 @@ import java.util.Set;
 public class JooqFieldAccessCollector {
 
     /** table.FIELD.xxx(...) 中 xxx 为字段条件方法 => READ。 */
-    private static final Set<String> FIELD_READ_METHODS = Set.of(
-            "eq", "ne", "lt", "le", "gt", "ge", "in", "like", "notLike", "isNull", "isNotNull");
+    private static final Set<String> FIELD_READ_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "eq", "ne", "lt", "le", "gt", "ge", "in", "like", "notLike", "isNull", "isNotNull")));
 
     /** table.FIELD 作为这些方法的实参 => READ。 */
-    private static final Set<String> READ_CONTEXT_METHODS = Set.of(
-            "where", "and", "or", "orderBy", "groupBy", "having");
+    private static final Set<String> READ_CONTEXT_METHODS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "where", "and", "or", "orderBy", "groupBy", "having")));
 
     private static final String UNRESOLVED = "UNRESOLVED";
     private static final int MAX_TRACE_DEPTH = 3;
@@ -275,7 +278,7 @@ public class JooqFieldAccessCollector {
     private String traceCallers(ExecutableElement callee, int paramIndex, int depth) {
         if (depth >= MAX_TRACE_DEPTH) return UNRESOLVED;
         boolean anyUpdate = false;
-        for (CallSite cs : callSites.getOrDefault(callee, List.of())) {
+        for (CallSite cs : callSites.getOrDefault(callee, Collections.emptyList())) {
             if (cs.args.size() <= paramIndex) continue;
             ExpressionTree arg = cs.args.get(paramIndex);
             String r = traceOrigin(new TreePath(cs.path, arg), depth + 1);

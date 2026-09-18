@@ -9,7 +9,8 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -23,6 +24,16 @@
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <version>8.0.33</version>
+    </dependency>
+    <!-- JDK8 下 com.sun.source.*（javac Tree API）位于 tools.jar，默认不在编译类路径，需显式引入。
+         JDK9+ 内置于 jdk.compiler 模块，此依赖在 JDK9+ 上会被忽略。
+         java.home 在 JDK8 指向 jre 目录，故 tools.jar 在 ${java.home}/../lib/tools.jar -->
+    <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>tools</artifactId>
+      <version>1.8</version>
+      <scope>system</scope>
+      <systemPath>${java.home}/../lib/tools.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -55,15 +55,15 @@ public class CallGraphBuilder {
         boolean concrete = owner instanceof TypeElement
                 && !((TypeElement) owner).getKind().isInterface()
                 && !callee.getModifiers().contains(Modifier.ABSTRACT);
-        if (concrete) return List.of(callee);
+        if (concrete) return Collections.singletonList(callee);
 
         List<ExecutableElement> impls = new ArrayList<>();
-        for (ExecutableElement cand : byName.getOrDefault(callee.getSimpleName().toString(), List.of())) {
+        for (ExecutableElement cand : byName.getOrDefault(callee.getSimpleName().toString(), Collections.emptyList())) {
             TypeElement candOwner = (TypeElement) cand.getEnclosingElement();
             if (candOwner.getKind().isInterface()) continue;
             if (ctx.elements.overrides(cand, callee, candOwner)) impls.add(cand);
         }
-        return impls.isEmpty() ? List.of(callee) : impls;
+        return impls.isEmpty() ? Collections.singletonList(callee) : impls;
     }
 
     private static ExecutableElement enclosingMethod(AnalysisContext ctx, CompilationUnitTree cu, Tree node) {

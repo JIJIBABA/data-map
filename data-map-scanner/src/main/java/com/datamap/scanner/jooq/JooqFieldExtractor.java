@@ -20,6 +20,7 @@ import com.sun.source.util.TreePath;
 
 import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +29,7 @@ import java.util.Set;
 public class JooqFieldExtractor {
     public static List<ScanField> extract(TypeElement tableClass, AnalysisContext ctx) {
         TreePath path = treePath(tableClass, ctx);
-        if (path == null || !(path.getLeaf() instanceof ClassTree)) return List.of();
+        if (path == null || !(path.getLeaf() instanceof ClassTree)) return Collections.emptyList();
         ClassTree cls = (ClassTree) path.getLeaf();
         CompilationUnitTree cu = path.getCompilationUnit();
         String pkg = cu == null ? null : packageName(cu);

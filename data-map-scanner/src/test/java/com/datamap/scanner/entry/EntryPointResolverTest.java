@@ -4,6 +4,7 @@ import com.datamap.scanner.javac.AnalysisContext;
 import com.datamap.scanner.javac.JavaParser;
 import org.junit.jupiter.api.Test;
 import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,9 +40,9 @@ public class EntryPointResolverTest {
             "@interface PostMapping { String value() default \"\"; }\n" +
             "@Marker @RestController @RequestMapping(\"/x\")\n" +
             "class C { @PostMapping(\"/p\") void m() {} }\n";
-        Files.writeString(src, code);
+        Files.write(src, code.getBytes(StandardCharsets.UTF_8));
 
-        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(List.of(src), ""));
+        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(Collections.singletonList(src), ""));
 
         assertEquals(1, entries.size());
         EntryPoint ep = entries.iterator().next();
@@ -60,9 +61,9 @@ public class EntryPointResolverTest {
             "@JobHandler(\"myHandler\")\n" +
             "class MyJobHandler { public void execute(String param) {} }\n" +
             "class MyTask { @XxlJob(\"myJob\") public void run() {} }\n";
-        Files.writeString(src, code);
+        Files.write(src, code.getBytes(StandardCharsets.UTF_8));
 
-        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(List.of(src), ""));
+        Set<EntryPoint> entries = EntryPointResolver.resolve(JavaParser.parse(Collections.singletonList(src), ""));
 
         assertEquals(2, entries.size());
         EntryPoint handler = entries.stream().filter(e -> "myHandler".equals(e.info.path)).findFirst().orElse(null);

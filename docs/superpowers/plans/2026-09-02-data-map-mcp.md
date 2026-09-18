@@ -711,24 +711,8 @@ class GetFieldUsageScenariosToolTest {
         JsonNode args = mapper.readTree("{}");
         assertThrows(McpArgsException.class, () -> tool.execute(args));
     }
-
-    @Test
-    void execute_serviceThrows_returnsErrorResult() throws Exception {
-        when(fieldService.getUsageScenarios(1L)).thenThrow(new RuntimeException("db down"));
-        JsonNode args = mapper.readTree("{\"fieldId\":1}");
-        McpToolResult r = tool.execute(args);
-        // The tool itself does NOT catch RuntimeException — it propagates.
-        // McpController (Task 6) catches it. So here we expect the throw.
-        // (This test documents the contract: tools let exceptions escape.)
-        // Re-assert via the controller test instead. Mark expected.
-        // To keep this test meaningful without the controller, we verify the throw:
-        fail("tool should propagate exceptions; see McpControllerTest");
-        Mockito.verifyNoInteractions(fieldService);
-    }
 }
 ```
-
-> **Note on the last test:** it asserts the documented contract — tools do NOT catch `RuntimeException`; `McpController` does. The `fail()` line is intentionally unreachable for a well-behaved tool; if the implementer prefers, they may delete this test and rely on `McpControllerTest` to prove error-handling. Keep only the first four tests if this one feels odd.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -806,9 +790,7 @@ public class GetFieldUsageScenariosTool implements McpTool {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `cd data-map-backend && mvn -q -Dtest=GetFieldUsageScenariosToolTest test`
-Expected: PASS — the first four tests pass (the fifth uses `fail()`; delete it per the note if desired before committing, or leave it and the suite shows 1 expected failure — better to delete it).
-
-**Action before committing:** delete the `execute_serviceThrows_returnsErrorResult` test (or comment it out). It documents intent but `fail()` makes the suite red. The error-handling contract is proven by `McpControllerTest` in Task 6.
+Expected: PASS — 4 tests pass (metadata, execute_returnsScenariosAsJson, emptyResult, missingFieldId).
 
 - [ ] **Step 5: Commit**
 

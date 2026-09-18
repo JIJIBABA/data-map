@@ -21,11 +21,19 @@ public class GitSource {
         if (workDir != null) pb.directory(workDir.toFile());
         pb.redirectErrorStream(true);
         Process p = pb.start();
-        String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        String out = new String(readAll(p.getInputStream()), StandardCharsets.UTF_8);
         int code = p.waitFor();
         if (code != 0) throw new RuntimeException("git 命令失败(" + code + "): " + String.join(" ", cmd) + "\n" + out);
         List<String> lines = new ArrayList<>();
         for (String line : out.split("\n")) if (!line.trim().isEmpty()) lines.add(line.trim());
         return lines;
+    }
+
+    private static byte[] readAll(java.io.InputStream is) throws java.io.IOException {
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = is.read(buf)) != -1) bos.write(buf, 0, n);
+        return bos.toByteArray();
     }
 }

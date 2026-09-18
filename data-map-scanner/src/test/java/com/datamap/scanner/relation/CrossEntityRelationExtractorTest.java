@@ -10,6 +10,7 @@ import javax.lang.model.element.TypeElement;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class CrossEntityRelationExtractorTest {
         AnalysisContext ctx = JavaParser.parse(files, "");
         Map<String, java.util.List<TypeElement>> entities = EntityResolver.resolve(ctx);
 
-        Map<String, List<ScanRelation>> relations = CrossEntityRelationExtractor.extract(ctx, entities, Map.of());
+        Map<String, List<ScanRelation>> relations = CrossEntityRelationExtractor.extract(ctx, entities, Collections.emptyMap());
 
         assertTrue(relations.containsKey("tb_order"), "关联应按源表 tb_order 分组");
         List<ScanRelation> orderRels = relations.get("tb_order");
