@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Layout, Menu } from 'antd'
+import { Layout, Menu, ConfigProvider, App as AntdApp } from 'antd'
 import { TableOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { themeConfig } from './theme'
 import TableInfoManage from './pages/TableInfoManage'
 import TableDetail from './pages/TableInfoManage/TableDetail'
 import TableRelation from './pages/TableRelation'
@@ -24,6 +26,7 @@ const menuItems = [
 function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [collapsed, setCollapsed] = useState(false)
 
   const selectedKey = (() => {
     if (location.pathname.startsWith('/tables/query')) return '/tables/query'
@@ -31,10 +34,17 @@ function AppLayout() {
   })()
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={220} theme="dark">
-        <div style={{ color: '#fff', fontSize: 18, textAlign: 'center', padding: '16px 0', fontWeight: 'bold' }}>
-          数据地图
+    <Layout style={{ minHeight: '100dvh' }}>
+      <Sider
+        width={224}
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        breakpoint="lg"
+      >
+        <div className="app-brand">
+          <TableOutlined />
+          {!collapsed && <span>数据地图</span>}
         </div>
         <Menu
           theme="dark"
@@ -45,7 +55,7 @@ function AppLayout() {
         />
       </Sider>
       <Layout>
-        <Content style={{ margin: 16, padding: 24, background: '#fff', borderRadius: 8 }}>
+        <Content style={{ padding: 24 }}>
           <Routes>
             <Route path="/" element={<Navigate to="/tables/list" />} />
             <Route path="/tables/list" element={<TableInfoManage />} />
@@ -61,8 +71,12 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppLayout />
-    </BrowserRouter>
+    <ConfigProvider theme={themeConfig}>
+      <AntdApp>
+        <BrowserRouter>
+          <AppLayout />
+        </BrowserRouter>
+      </AntdApp>
+    </ConfigProvider>
   )
 }
